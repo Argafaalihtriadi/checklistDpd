@@ -1,0 +1,3180 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"
+    />
+    <title>Checklist DPD!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+      window.jsPDFReady = false;
+      window.addEventListener('load', function() {
+        if (window.jspdf && window.jspdf.jsPDF) {
+          window.jsPDFReady = true;
+        }
+      });
+    </script>
+    <style>
+      :root {
+        --cream: #f3eee2;
+        --ink: #151310;
+        --orange: #ff5a1f;
+        --yellow: #f4b537;
+        --green: #3f8e52;
+        --green-bg: #c9e9be;
+        --red: #c0392b;
+        --red-bg: #f6c2c2;
+        --gray-bg: #dcdcdc;
+      }
+      * {
+        font-family: "Poppins", sans-serif;
+      }
+      body {
+        background: var(--cream);
+        color: var(--ink);
+      }
+      .hardline {
+        border: 2.5px solid var(--ink);
+      }
+      .hardline-thick {
+        border: 3px solid var(--ink);
+      }
+      .btn-press {
+        transition: transform 0.08s ease;
+      }
+      .btn-press:active {
+        transform: scale(0.96);
+      }
+      .app-shell {
+        max-width: 430px;
+        margin: 0 auto;
+        min-height: 100vh;
+        background: var(--cream);
+        position: relative;
+      }
+      ::-webkit-scrollbar {
+        display: none;
+      }
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+      }
+      .rak-btn {
+        transition: all 0.12s ease;
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: manipulation;
+        position: relative;
+      }
+      .rak-btn .badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: #fff;
+        border: 2px solid var(--ink);
+      }
+      .rak-btn.holding {
+        transform: scale(0.94);
+        filter: brightness(0.9);
+      }
+      .shelf-dot {
+        transition: all 0.12s ease;
+      }
+      .toast {
+        transition: all 0.25s ease;
+      }
+      .slide-form {
+        display: none;
+      }
+      .slide-form.active {
+        display: block;
+      }
+      input[list]::-webkit-calendar-picker-indicator {
+        opacity: 0.6;
+      }
+
+      /* Loading Overlay */
+      .loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(21, 17, 16, 0.6);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+      .loading-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .spinner {
+        width: 48px;
+        height: 48px;
+        border: 5px solid rgba(255,255,255,0.25);
+        border-top-color: var(--orange);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .loading-overlay p {
+        color: #fff;
+        font-weight: 600;
+        font-size: 14px;
+        margin-top: 14px;
+        letter-spacing: 0.3px;
+      }
+
+      /* Profile Avatar */
+      .avatar-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2.5px solid var(--ink);
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        position: relative;
+        flex-shrink: 0;
+      }
+      .avatar-btn:hover {
+        transform: scale(1.08);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      }
+      .avatar-btn:active {
+        transform: scale(0.95);
+      }
+      .avatar-btn img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .avatar-btn .avatar-fallback {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--ink);
+        color: #fff;
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      /* Settings Dropdown */
+      .settings-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: 280px;
+        background: #fff;
+        border: 3px solid var(--ink);
+        border-radius: 16px;
+        box-shadow: 8px 8px 0 var(--ink);
+        z-index: 60;
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        overflow: hidden;
+      }
+      .settings-dropdown.open {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+      }
+      .settings-dropdown .sd-header {
+        padding: 18px 16px 14px;
+        text-align: center;
+        border-bottom: 2px solid var(--ink);
+        background: var(--cream);
+      }
+      .settings-dropdown .sd-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 3px solid var(--ink);
+        overflow: hidden;
+        margin: 0 auto 10px;
+        background: var(--yellow);
+      }
+      .settings-dropdown .sd-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .settings-dropdown .sd-avatar .sd-fallback {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .settings-dropdown .sd-name {
+        font-weight: 700;
+        font-size: 15px;
+        color: var(--ink);
+        line-height: 1.2;
+      }
+      .settings-dropdown .sd-email {
+        font-size: 11px;
+        color: #888;
+        margin-top: 2px;
+        word-break: break-all;
+      }
+      .settings-dropdown .sd-body {
+        padding: 8px 0;
+      }
+      .settings-dropdown .sd-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink);
+        cursor: pointer;
+        transition: background 0.12s;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+      }
+      .settings-dropdown .sd-item:hover {
+        background: var(--cream);
+      }
+      .settings-dropdown .sd-item:active {
+        background: var(--gray-bg);
+      }
+      .settings-dropdown .sd-item .sd-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .settings-dropdown .sd-divider {
+        height: 2px;
+        background: var(--ink);
+        margin: 4px 16px;
+        opacity: 0.15;
+      }
+      .settings-dropdown .sd-item.logout {
+        color: var(--red);
+      }
+      .settings-dropdown .sd-item.logout .sd-icon {
+        background: var(--red-bg);
+      }
+
+      /* Backdrop for closing dropdown */
+      .settings-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 55;
+        display: none;
+      }
+      .settings-backdrop.show {
+        display: block;
+      }
+
+      /* Login button loading state */
+      .btn-loading {
+        position: relative;
+        pointer-events: none;
+        opacity: 0.7;
+      }
+      .btn-loading span {
+        visibility: hidden;
+      }
+      .btn-loading::after {
+        content: '';
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        border: 3px solid rgba(255,255,255,0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        top: 50%;
+        left: 50%;
+        margin-top: -11px;
+        margin-left: -11px;
+      }
+
+      /* Pulse animation for avatar on login */
+      @keyframes avatarPop {
+        0% { transform: scale(0.5); opacity: 0; }
+        60% { transform: scale(1.15); }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .avatar-pop {
+        animation: avatarPop 0.4s ease forwards;
+      }
+
+      /* ===== DARK MODE ===== */
+      [data-theme="dark"] {
+        --cream: #1a1a1a;
+        --ink: #f0f0f0;
+        --green-bg: #1a3a1a;
+        --red-bg: #3a1a1a;
+        --gray-bg: #2a2a2a;
+      }
+      [data-theme="dark"] body { background: #1a1a1a; color: #f0f0f0; }
+      [data-theme="dark"] .app-shell { background: #1a1a1a; }
+      [data-theme="dark"] .hardline { border-color: #f0f0f0; }
+      [data-theme="dark"] .hardline-thick { border-color: #f0f0f0; }
+      [data-theme="dark"] .rak-btn { border-color: #f0f0f0; }
+      [data-theme="dark"] .rak-btn .badge { border-color: #1a1a1a; }
+      [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+        background: #2a2a2a; color: #f0f0f0; border-color: #f0f0f0;
+      }
+      [data-theme="dark"] input::placeholder, [data-theme="dark"] textarea::placeholder { color: #888; }
+      [data-theme="dark"] .bg-white { background-color: #2a2a2a !important; }
+      [data-theme="dark"] .bg-white\/50 { background-color: rgba(42,42,42,0.5) !important; }
+      [data-theme="dark"] .bg-white\/60 { background-color: rgba(42,42,42,0.6) !important; }
+      [data-theme="dark"] .settings-dropdown { background: #242424; border-color: #f0f0f0; box-shadow: 8px 8px 0 #f0f0f0; }
+      [data-theme="dark"] .settings-dropdown .sd-header { background: #1a1a1a; }
+      [data-theme="dark"] .settings-dropdown .sd-item { color: #f0f0f0; }
+      [data-theme="dark"] .settings-dropdown .sd-item:hover { background: #2a2a2a; }
+      [data-theme="dark"] .settings-dropdown .sd-name { color: #f0f0f0; }
+      [data-theme="dark"] .settings-dropdown .sd-avatar .sd-fallback { color: #f0f0f0; }
+      [data-theme="dark"] #bottomNav { border-color: #f0f0f0; }
+      [data-theme="dark"] table { color: #f0f0f0; }
+      [data-theme="dark"] .border-t { border-color: #555 !important; }
+      [data-theme="dark"] tr.border-t { border-color: #444 !important; }
+      [data-theme="dark"] #clockBar { color: #f0f0f0; }
+      [data-theme="dark"] .toast { color: #fff; }
+      [data-theme="dark"] .nav-btn { color: rgba(255,255,255,0.5); }
+      [data-theme="dark"] .text-neutral-500, [data-theme="dark"] .text-neutral-400, [data-theme="dark"] .text-neutral-600 { color: #aaa !important; }
+      [data-theme="dark"] .text-neutral-800 { color: #ccc !important; }
+
+      /* ===== TOGGLE SWITCH ===== */
+      .toggle-switch {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+      .toggle-switch input { opacity: 0; width: 0; height: 0; }
+      .toggle-slider {
+        position: absolute;
+        inset: 0;
+        background: #ccc;
+        border-radius: 24px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .toggle-slider::before {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        left: 3px;
+        bottom: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.3s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      }
+      .toggle-switch input:checked + .toggle-slider { background: var(--green); }
+      .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+      /* ===== LANGUAGE PILL ===== */
+      .lang-pill {
+        display: flex;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .lang-pill button {
+        padding: 4px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: transparent;
+        color: var(--ink);
+      }
+      .lang-pill button.active {
+        background: var(--ink);
+        color: #fff;
+      }
+
+      /* ===== CUSTOM MODAL ===== */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        padding: 20px;
+      }
+      .modal-backdrop.show { opacity: 1; pointer-events: auto; }
+      .modal-box {
+        background: var(--cream);
+        border: 3px solid var(--ink);
+        border-radius: 20px;
+        box-shadow: 8px 8px 0 var(--ink);
+        width: 100%;
+        max-width: 340px;
+        transform: scale(0.85) translateY(20px);
+        transition: transform 0.25s ease;
+        overflow: hidden;
+      }
+      [data-theme="dark"] .modal-box { background: #242424; box-shadow: 8px 8px 0 #f0f0f0; }
+      .modal-backdrop.show .modal-box { transform: scale(1) translateY(0); }
+      .modal-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin: 0 auto 12px;
+        border: 3px solid var(--ink);
+      }
+      .modal-title {
+        font-weight: 800;
+        font-size: 17px;
+        text-align: center;
+        margin-bottom: 6px;
+        color: var(--ink);
+      }
+      .modal-message {
+        font-size: 13px;
+        text-align: center;
+        color: #666;
+        line-height: 1.5;
+        padding: 0 8px;
+        word-break: break-word;
+      }
+      [data-theme="dark"] .modal-message { color: #bbb; }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        padding: 16px;
+      }
+      .modal-actions .btn-modal {
+        flex: 1;
+        padding: 11px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 14px;
+        border: 2.5px solid var(--ink);
+        cursor: pointer;
+        transition: all 0.12s;
+        text-align: center;
+      }
+      .modal-actions .btn-modal:active { transform: scale(0.95); }
+      .modal-actions .btn-cancel {
+        background: transparent;
+        color: var(--ink);
+      }
+      .modal-actions .btn-confirm {
+        background: var(--ink);
+        color: #fff;
+      }
+      .modal-actions .btn-danger {
+        background: var(--red);
+        color: #fff;
+        border-color: var(--red);
+      }
+
+      /* ===== EXPORT BUTTONS ===== */
+      .export-bar {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+      .export-bar::-webkit-scrollbar { display: none; }
+      .export-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.12s;
+        background: var(--cream);
+        color: var(--ink);
+        flex-shrink: 0;
+      }
+      .export-btn:active { transform: scale(0.95); }
+      [data-theme="dark"] .export-btn { background: #2a2a2a; border-color: #f0f0f0; color: #f0f0f0; }
+      .export-btn.pdf { background: var(--red-bg); }
+      .export-btn.csv { background: var(--green-bg); }
+      .export-btn.report { background: var(--yellow); }
+      .active-toggle { background: var(--orange); color: #fff; }
+      .inactive-toggle { background: transparent; color: var(--ink); }
+
+      /* ===== DAILY REPORT MODAL ===== */
+      .report-preview {
+        max-height: 350px;
+        overflow: auto;
+        border: 2px solid var(--ink);
+        border-radius: 12px;
+        margin: 0 16px 12px;
+        background: #fff;
+      }
+      [data-theme="dark"] .report-preview { background: #1a1a1a; }
+      .report-preview img {
+        width: 100%;
+        display: block;
+      }
+      .report-actions {
+        display: flex;
+        gap: 10px;
+        padding: 0 16px 16px;
+      }
+      .report-actions button {
+        flex: 1;
+        padding: 11px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 13px;
+        border: 2.5px solid var(--ink);
+        cursor: pointer;
+        transition: all 0.12s;
+      }
+      .report-actions button:active { transform: scale(0.95); }
+
+      /* ===== SUCCESS ANIMATION ===== */
+      @keyframes successPop {
+        0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+        50% { transform: scale(1.2) rotate(5deg); }
+        70% { transform: scale(0.9) rotate(-2deg); }
+        100% { transform: scale(1) rotate(0); opacity: 1; }
+      }
+      @keyframes checkmark {
+        0% { stroke-dashoffset: 50; }
+        100% { stroke-dashoffset: 0; }
+      }
+      .success-check {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 4px solid var(--green);
+        background: var(--green-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+        animation: successPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+      .success-check svg {
+        width: 32px;
+        height: 32px;
+        stroke: var(--green);
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+        stroke-dasharray: 50;
+        stroke-dashoffset: 50;
+        animation: checkmark 0.4s 0.3s ease forwards;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="spinner"></div>
+      <p id="loadingText">Masuk...</p>
+    </div>
+
+    <!-- Settings Backdrop -->
+    <div id="settingsBackdrop" class="settings-backdrop" onclick="closeSettings()"></div>
+
+    <div class="app-shell pb-24">
+      <div
+        class="flex items-center justify-between px-5 pt-3 pb-1 text-[13px] font-semibold"
+        id="clockBar"
+      ></div>
+
+      <!-- ============================================================ -->
+      <!-- LOGIN PAGE -->
+      <!-- ============================================================ -->
+      <section id="page-login" class="page active px-5 pt-2">
+        <div class="mb-2 flex justify-end">
+          <button
+            class="text-xs font-bold underline underline-offset-2"
+            onclick="showAlert({title:t('help'),message:t('helpMsg'),type:'info'})"
+            data-i18n="help"
+          >
+            HELP
+          </button>
+        </div>
+
+        <h1 class="text-[40px] leading-[1.05] font-black mt-3">
+          CHECKLIST<br />DPD !
+        </h1>
+        <p class="text-[15px] font-semibold mt-2" data-i18n="signIN">Sign in to continue</p>
+
+        <div class="flex justify-end -mt-14 mb-4">
+          <div
+            class="w-24 h-24 hardline-thick rounded-xl flex items-center justify-center"
+            style="background: var(--yellow)"
+          >
+            <span class="text-4xl"><img src="" alt="" /></span>
+          </div>
+        </div>
+        <form id="loginForm" class="space-y-4" autocomplete="off">
+          <div>
+            <label class="block text-xs font-bold mb-1">USERNAME</label>
+            <input
+              id="loginUsername"
+              type="text"
+              placeholder="Username"
+              required
+              class="w-full hardline-thick rounded-xl px-4 py-3 bg-white/60 outline-none text-[15px] placeholder:text-neutral-400"
+            />
+          </div>
+          <div>
+            <div class="flex justify-between mb-1">
+              <label class="block text-xs font-bold">PASSWORD</label>
+              <button
+                type="button"
+                class="text-xs font-bold underline underline-offset-2"
+                onclick="handleForgotPassword()"
+              >
+                FORGOT?
+              </button>
+            </div>
+            <div class="relative">
+              <input
+                id="loginPassword"
+                type="password"
+                placeholder="••••••••"
+                required
+                class="w-full hardline-thick rounded-xl px-4 py-3 bg-white/60 outline-none text-[15px] placeholder:text-neutral-400"
+              />
+              <button
+                type="button"
+                onclick="togglePw()"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-lg"
+              >
+                👁️
+              </button>
+            </div>
+          </div>
+
+          <p
+            id="loginError"
+            class="text-red-600 text-xs font-semibold hidden"
+          ></p>
+
+          <button
+            type="submit"
+            id="loginSubmitBtn"
+            class="btn-press w-full hardline-thick rounded-xl overflow-hidden flex items-center justify-between font-black text-lg"
+            style="background: var(--orange)"
+          >
+            <span class="pl-5 py-4" data-i18n="signIN">SIGN IN</span>
+            <span
+              class="pr-5 py-4 bg-black text-white px-5 self-stretch flex items-center"
+              >→</span
+            >
+          </button>
+        </form>
+
+        <div class="flex items-center gap-3 my-6">
+          <div class="flex-1 border-t-2 border-black/70"></div>
+          <span class="text-xs font-semibold text-neutral-600"
+            data-i18n="orContinueWith"
+            >OR CONTINUE WITH</span
+          >
+          <div class="flex-1 border-t-2 border-black/70"></div>
+        </div>
+
+        <div id="googleBtnWrap" class="flex justify-center"></div>
+        <p
+          id="googleDisabledNote"
+          class="hidden text-center text-[11px] text-neutral-400 mt-1"
+          data-i18n="googleNotConfigured"
+        >
+          Login Google belum dikonfigurasi (isi GOOGLE_CLIENT_ID)
+        </p>
+
+          <p class="text-center text-sm font-semibold mt-6">
+          <span data-i18n="lupaAkun">LUPA AKUN?</span>
+          <button
+            onclick="handleSignUp()"
+            data-i18n="hubungiAdminBtn"
+            class="font-extrabold"
+            style="color: var(--orange)"
+          >
+            HUBUNGI ADMIN
+          </button>
+        </p>
+
+        <!-- <button
+          onclick="skipLogin()"
+          class="btn-press w-full mt-4 border-2 border-dashed border-neutral-400 rounded-xl py-2.5 text-xs font-bold text-neutral-500"
+        >
+          ⚙️ LEWATI LOGIN (MODE TESTING)
+        </button> -->
+      </section>
+      <!-- HEADER -->
+      <header
+        id="appHeader"
+        class="hidden px-5 pt-2 pb-1 flex items-center justify-between"
+      >
+        <h1 id="pageMainTitle" class="text-3xl font-black">Dashboard</h1>
+        <div class="flex items-center gap-2 relative">
+          <!-- <button
+            id="btnSettings"
+            onclick="toggleSettings(event)"
+            class="w-9 h-9 rounded-full bg-black/10 text-black flex items-center justify-center text-sm shadow-md"
+            title="Settings"
+          >
+            ⚙️
+          </button> -->
+          <div id="userAvatarBtn" class="avatar-btn" onclick="toggleSettings(event)" title="Profil & Settings">
+            <img id="userAvatarImg" class="hidden" src="" alt="avatar" />
+            <div id="userAvatarFallback" class="avatar-fallback">👤</div>
+          </div>
+
+          <!-- Settings Dropdown -->
+          <div id="settingsDropdown" class="settings-dropdown">
+            <div class="sd-header">
+              <div class="sd-avatar">
+                <img id="sdAvatarImg" class="hidden" src="" alt="avatar" />
+                <div id="sdAvatarFallback" class="sd-fallback">👤</div>
+              </div>
+              <div class="sd-name" id="sdName">User</div>
+              <div class="sd-email" id="sdEmail">—</div>
+            </div>
+            <div class="sd-body">
+              <!-- Dark Mode Toggle -->
+              <div class="sd-item" style="cursor:default">
+                <span class="sd-icon" style="background:var(--gray-bg)">🌙</span>
+                <span style="flex:1" data-i18n="darkMode">Dark Mode</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <!-- Language Toggle -->
+              <div class="sd-item" style="cursor:default">
+                <span class="sd-icon" style="background:var(--green-bg)">🌐</span>
+                <span style="flex:1" data-i18n="bahasa">Bahasa</span>
+                <div class="lang-pill">
+                  <button id="langID" class="active" onclick="setLanguage('id')">ID</button>
+                  <button id="langEN" onclick="setLanguage('en')">EN</button>
+                </div>
+              </div>
+              <div class="sd-divider"></div>
+              <!-- App Version -->
+              <div class="sd-item" style="cursor:default;opacity:0.8">
+                <span class="sd-icon" style="background:var(--yellow)">ℹ️</span>
+                <div>
+                  <div style="font-size:13px;font-weight:700">Checklist DPD v1.0</div>
+                  <div style="font-size:11px;color:#888;margin-top:1px">Developed by <b>Argaft</b></div>
+                </div>
+              </div>
+              <!-- Contact Admin -->
+              <a class="sd-item" href="https://github.com/Argafaalihtriadi" target="_blank" rel="noopener" style="text-decoration:none">
+                <span class="sd-icon" style="background:var(--gray-bg)">🐙</span>
+                <span style="flex:1" data-i18n="hubungiAdmin">Hubungi Admin</span>
+                <span style="font-size:12px;color:#888">↗</span>
+              </a>
+              <div class="sd-divider"></div>
+              <button class="sd-item logout" onclick="confirmLogout()">
+                <span class="sd-icon">🚪</span>
+                <span data-i18n="keluar">Keluar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ============================================================ -->
+      <!-- DASHBOARD -->
+      <!-- ============================================================ -->
+      <section id="page-dashboard" class="page px-5 pt-3 space-y-4">
+        <div class="hardline-thick rounded-2xl p-4 bg-white/50">
+          <p class="font-extrabold text-[15px] mb-1" data-i18n="kepatuhanMingguIni">Kepatuhan Minggu Ini</p>
+          <div class="relative flex items-center justify-center">
+            <svg viewBox="0 0 200 120" class="w-full max-w-[260px]">
+              <path
+                d="M20 100 A80 80 0 0 1 180 100"
+                fill="none"
+                stroke="#e5e0d2"
+                stroke-width="14"
+                stroke-linecap="round"
+                pathLength="100"
+              />
+              <path
+                id="gaugeArc"
+                d="M20 100 A80 80 0 0 1 180 100"
+                fill="none"
+                stroke="var(--orange)"
+                stroke-width="14"
+                stroke-linecap="round"
+                pathLength="100"
+                stroke-dasharray="0 100"
+              />
+              <text
+                x="20"
+                y="117"
+                text-anchor="middle"
+                font-size="9"
+                fill="#999"
+                font-weight="600"
+              >
+                0
+              </text>
+              <text
+                x="32"
+                y="35"
+                text-anchor="middle"
+                font-size="9"
+                fill="#999"
+                font-weight="600"
+              >
+                25
+              </text>
+              <text
+                x="100"
+                y="8"
+                text-anchor="middle"
+                font-size="9"
+                fill="#999"
+                font-weight="600"
+              >
+                50
+              </text>
+              <text
+                x="168"
+                y="35"
+                text-anchor="middle"
+                font-size="9"
+                fill="#999"
+                font-weight="600"
+              >
+                75
+              </text>
+              <text
+                x="180"
+                y="117"
+                text-anchor="middle"
+                font-size="9"
+                fill="#999"
+                font-weight="600"
+              >
+                100
+              </text>
+            </svg>
+            <div class="absolute top-[46%] text-center">
+              <div class="text-4xl font-black" id="compliancePct">0%</div>
+              <div class="text-xs text-neutral-500 font-semibold" data-i18n="mingguIni">
+                Minggu Ini
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-neutral-500 mt-1" id="checkedSummary">
+            0 dari 0 rak sudah diperiksa
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div
+            class="hardline-thick rounded-xl p-3"
+            style="background: var(--green-bg)"
+          >
+            <p class="text-[11px] font-bold text-green-900" data-i18n="zonaTerbaik">ZONA TERBAIK</p>
+            <p class="font-black text-green-900" id="bestZone">—</p>
+          </div>
+          <div
+            class="hardline-thick rounded-xl p-3"
+            style="background: var(--red-bg)"
+          >
+            <p class="text-[11px] font-bold text-red-900" data-i18n="zonaTerlemah">ZONA TERLEMAH</p>
+            <p class="font-black text-red-900" id="worstZone">—</p>
+          </div>
+          <div
+            class="hardline-thick rounded-xl p-3"
+            style="background: var(--red-bg)"
+          >
+            <p class="text-[11px] font-bold text-red-900" data-i18n="totalNok">TOTAL NOK (OPEN)</p>
+            <p class="font-black text-red-900" id="totalNok">0 RAK</p>
+          </div>
+          <div
+            class="hardline-thick rounded-xl p-3"
+            style="background: var(--gray-bg)"
+          >
+            <p class="text-[11px] font-bold text-neutral-800" data-i18n="pendingReview">PENDING REVIEW</p>
+            <p class="font-black text-neutral-800" id="pendingReview">0 RAK</p>
+          </div>
+        </div>
+
+        <div class="hardline-thick rounded-2xl p-4 bg-white/50">
+          <div class="flex items-center justify-between mb-2">
+            <p class="font-extrabold text-[15px]" data-i18n="trendKepatuhan">Trend Kepatuhan</p>
+            <span class="text-xs font-semibold text-neutral-500"
+              data-i18n="mingguTerakhir"
+              >4 Minggu Terakhir</span
+            >
+          </div>
+          <svg id="trendSvg" viewBox="0 0 300 140" class="w-full"></svg>
+          <div
+            id="trendLabels"
+            class="flex justify-between text-[10px] text-neutral-500 font-semibold mt-1 px-1"
+          ></div>
+          <p
+            id="trendEmpty"
+            class="text-xs text-neutral-400 text-center py-6 hidden"
+            data-i18n="trendEmpty"
+          >
+            Belum ada cukup data untuk menampilkan trend.
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold mb-1" data-i18n="quickFilter">Quick Filter</label>
+          <select
+            id="quickFilter"
+            onchange="renderZoneTable()"
+            class="w-full hardline-thick rounded-xl px-4 py-3 bg-white/60 outline-none text-[15px]"
+          >
+            <option value="">Semua zona</option>
+          </select>
+        </div>
+
+        <div class="hardline-thick rounded-xl overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-black text-white text-left">
+                <th class="py-2 px-3 font-bold">Zona</th>
+                <th class="py-2 px-3 font-bold text-center">OK</th>
+                <th class="py-2 px-3 font-bold text-center">NOK</th>
+                <th class="py-2 px-3 font-bold text-center">%</th>
+              </tr>
+            </thead>
+            <tbody id="zoneTableBody"></tbody>
+          </table>
+          <p
+            id="zoneTableEmpty"
+            class="text-center text-xs text-neutral-400 py-4 hidden"
+          >
+            Belum ada data pemeriksaan minggu ini.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- CHECKLIST -->
+      <!-- ============================================================ -->
+      <section id="page-checklist" class="page px-5 pt-3 space-y-4">
+        <div class="hardline-thick rounded-2xl p-4 bg-white/50 space-y-3">
+          <p class="font-extrabold text-[15px]" data-i18n="lokasiPemeriksaan">Lokasi Pemeriksaan</p>
+          <div>
+            <label class="block text-xs font-bold mb-1" data-i18n="pilihLine">Pilih Line *</label>
+            <input
+              id="lineInput"
+              list="lineOptions"
+              placeholder="Pilih atau ketik line (mis. AB)"
+              class="w-full hardline-thick rounded-xl px-4 py-3 bg-white outline-none text-[15px]"
+              oninput="onLineChange()"
+            />
+            <datalist id="lineOptions"></datalist>
+            <p class="text-[11px] text-neutral-500 mt-1">
+              Pilih dari daftar atau ketik manual line-nya
+            </p>
+          </div>
+          <div>
+            <p class="text-xs font-bold mb-1">Zona</p>
+            <span
+              id="zonaAutoBadge"
+              class="inline-flex items-center gap-2 hardline rounded-full px-3 py-1.5 text-sm font-bold"
+              style="background: var(--green-bg)"
+            >
+              📍 <span id="zonaAutoText">—</span>
+              <span
+                class="text-[10px] bg-black text-white rounded-full px-2 py-0.5"
+                >AUTO</span
+              >
+            </span>
+            <p class="text-[11px] text-neutral-500 mt-1">
+              Terisi otomatis berdasarkan Line yang dipilih
+            </p>
+          </div>
+        </div>
+
+        <div class="hardline-thick rounded-2xl p-4 bg-white/50">
+          <p class="font-extrabold text-[15px] mb-1" data-i18n="cekKondisiRak">Cek Kondisi Rak</p>
+          <div class="flex gap-4 mb-3 text-xs font-semibold items-center">
+            <span class="flex items-center gap-1.5"
+              ><span
+                class="w-3 h-3 rounded-full inline-block"
+                style="
+                  background: var(--green-bg);
+                  border: 1.5px solid var(--green);
+                "
+              ></span>
+              <span data-i18n="aman">Aman</span
+            >
+            <span class="flex items-center gap-1.5"
+              ><span
+                class="w-3 h-3 rounded-full inline-block"
+                style="
+                  background: var(--red-bg);
+                  border: 1.5px solid var(--red);
+                "
+              ></span>
+              <span data-i18n="bermasalah">Bermasalah</span
+            >
+          </div>
+          <div id="rakGrid" class="grid grid-cols-3 gap-3"></div>
+          <p
+            id="rakGridEmpty"
+            class="text-xs text-neutral-400 text-center py-6"
+            data-i18n="pilihLineDulu"
+          >
+            Pilih line dulu untuk memuat daftar rak.
+          </p>
+          <p class="text-[11px] text-neutral-500 mt-3">
+            Ketuk untuk tandai <b>Aman</b> ✓ &nbsp;•&nbsp; Tahan 1 detik untuk
+            tandai <b>Bermasalah</b> ⚠️ &nbsp;•&nbsp; Ketuk lagi pada rak
+            bermasalah untuk membatalkan
+          </p>
+        </div>
+
+        <!-- INPUT TEMUAN - hanya untuk shelf/slide form saat ada rak bermasalah -->
+        <div
+          id="inputTemuanPanel"
+          class="hardline-thick rounded-2xl p-4 bg-white/50 space-y-3 hidden"
+        >
+          <p class="font-extrabold text-[15px]" data-i18n="inputTemuan">Input Temuan</p>
+
+          <div>
+            <p class="text-xs font-bold mb-2" data-i18n="rakBermasalah">Rak bermasalah</p>
+            <div id="rakChips" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <div>
+            <p class="text-xs font-bold mb-2">
+              Shelf (rak <span id="activeRakLabel">—</span>)
+            </p>
+            <div
+              id="shelfSelector"
+              class="flex items-center gap-2 flex-wrap"
+            ></div>
+            <p class="text-[11px] text-neutral-500 mt-1">
+              Pilih 1 atau lebih shelf yang bermasalah pada rak ini
+            </p>
+          </div>
+
+          <div
+            id="slideArea"
+            class="hidden border-t-2 border-dashed border-neutral-300 pt-3 space-y-3"
+          >
+            <div class="flex items-center justify-between">
+              <button
+                type="button"
+                onclick="goSlide(-1)"
+                class="hardline rounded-lg w-9 h-9 font-bold"
+              >
+                ←
+              </button>
+              <div class="text-center">
+                <div
+                  class="hardline rounded-lg px-4 py-1.5 font-bold text-sm inline-block"
+                  style="background: var(--red-bg)"
+                  id="slideRakShelfLabel"
+                >
+                  Rak — Shelf —
+                </div>
+                <p class="text-[11px] text-neutral-500 mt-1" id="slideCounter">
+                  Slide 1/1
+                </p>
+              </div>
+              <button
+                type="button"
+                onclick="goSlide(1)"
+                class="hardline rounded-lg w-9 h-9 font-bold"
+              >
+                →
+              </button>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold mb-1" data-i18n="kategori">Kategori</label>
+              <select
+                id="kategoriSelect"
+                onchange="onKategoriChange()"
+                class="w-full hardline rounded-xl px-4 py-2.5 bg-white outline-none text-[15px]"
+              >
+                <option value="">Pilih kategori</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1" data-i18n="subKategori">Sub kategori</label>
+              <select
+                id="subKategoriSelect"
+                onchange="onSlideFieldChange()"
+                class="w-full hardline rounded-xl px-4 py-2.5 bg-white outline-none text-[15px]"
+              >
+                <option value="">Pilih keterangan</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1" data-i18n="catatanFoto">Catatan & Foto</label>
+              <textarea
+                id="catatanInput"
+                oninput="onSlideFieldChange()"
+                rows="2"
+                placeholder="Isi catatan"
+                class="w-full hardline rounded-xl px-4 py-2.5 bg-white outline-none text-[15px] resize-none mb-2"
+              ></textarea>
+              <div class="flex items-center gap-2">
+                <label
+                  id="photoBtnLabel"
+                  class="hardline rounded-xl px-4 py-2 flex items-center justify-center gap-2 cursor-pointer bg-white font-bold text-xs flex-1"
+                >
+                  📸 Lampirkan Foto
+                  <input
+                    type="file"
+                    id="photoInput"
+                    accept="image/*"
+                    class="hidden"
+                    onchange="onPhotoSelected()"
+                  />
+                </label>
+                <div
+                  id="photoPreviewWrap"
+                  class="hidden flex items-center justify-between bg-white hardline rounded-xl px-3 py-1.5 flex-1"
+                >
+                  <span
+                    id="photoFileName"
+                    class="text-[10px] font-semibold truncate"
+                  ></span>
+                  <button
+                    type="button"
+                    onclick="removePhoto()"
+                    class="text-red-600 font-black text-sm px-2"
+                  >
+                    X
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- POSTING BAR - selalu tampil setelah line dipilih -->
+        <div
+          id="postingBar"
+          class="hardline-thick rounded-2xl p-4 bg-white/50 hidden"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="hardline rounded-lg px-3 py-2 text-xs font-bold flex-1 text-center"
+              style="background: var(--red-bg)"
+              id="summaryBadge"
+            >
+              0 Rak 0 Shelf Bermasalah
+            </div>
+            <button
+              onclick="handlePostClick()"
+              data-i18n="posting"
+              class="btn-press hardline-thick rounded-lg px-6 py-2.5 font-black"
+              style="background: var(--green-bg)"
+            >
+              Posting
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- DETAIL TEMUAN -->
+      <!-- ============================================================ -->
+      <section id="page-detail" class="page px-5 pt-3 space-y-3">
+        <div class="hardline-thick rounded-2xl p-3 bg-white/50 space-y-2">
+          <p class="text-xs font-bold" data-i18n="filterTanggal">Filter Tanggal</p>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] text-neutral-500 mb-1"
+                data-i18n="dari"
+                >Dari</label
+              >
+              <input
+                type="date"
+                id="filterFrom"
+                class="w-full hardline rounded-lg px-2 py-2 text-sm bg-white outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] text-neutral-500 mb-1"
+                data-i18n="sampai"
+                >Sampai</label
+              >
+              <input
+                type="date"
+                id="filterTo"
+                class="w-full hardline rounded-lg px-2 py-2 text-sm bg-white outline-none"
+              />
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button
+              onclick="loadDetailTemuan()"
+              class="btn-press flex-1 hardline-thick rounded-lg py-2 font-bold text-sm"
+              style="background: var(--orange)"
+              data-i18n="terapkan"
+            >
+              Terapkan
+            </button>
+            <button
+              onclick="resetFilterTanggal()"
+              class="btn-press hardline rounded-lg px-4 py-2 font-bold text-sm bg-white"
+              data-i18n="reset"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div class="export-bar">
+          <button class="export-btn pdf" onclick="exportPDF()">📄 PDF</button>
+          <button class="export-btn csv" onclick="exportCSV()">📊 CSV</button>
+          <button class="export-btn report" onclick="generateDailyReport()">📸 <span data-i18n="laporanHarian">Laporan Harian</span></button>
+        </div>
+
+        <div class="flex gap-1 bg-white/60 hardline rounded-xl p-1">
+          <button onclick="toggleDetailView('all')" id="viewAllBtn"
+            class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all active-toggle"
+            data-i18n="semuaRiwayat">Semua Riwayat</button>
+          <button onclick="toggleDetailView('latest')" id="viewLatestBtn"
+            class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all inactive-toggle"
+            data-i18n="terkiniSaja">Terbaru Saja</button>
+        </div>
+
+        <div id="detailList" class="space-y-3"></div>
+        <p
+          id="detailEmpty"
+          class="text-sm text-neutral-500 hidden text-center py-10"
+          data-i18n="belumAdaTemuan"
+        >
+          Belum ada temuan pada rentang tanggal ini.
+        </p>
+      </section>
+
+      <!-- BOTTOM NAV -->
+      <nav
+        id="bottomNav"
+        class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-[390px] hardline-thick rounded-2xl bg-[var(--ink)] flex justify-around py-3 z-40"
+      >
+        <button
+          onclick="goTo('dashboard')"
+          data-nav="dashboard"
+          class="nav-btn text-2xl text-white/50"
+        >
+          📊
+        </button>
+        <button
+          onclick="goTo('checklist')"
+          data-nav="checklist"
+          class="nav-btn text-2xl text-white/50"
+        >
+          📝
+        </button>
+        <button
+          onclick="goTo('detail')"
+          data-nav="detail"
+          class="nav-btn text-2xl text-white/50"
+        >
+          📋
+        </button>
+      </nav>
+
+      <div
+        id="toast"
+        class="toast fixed top-4 left-1/2 -translate-x-1/2 translate-y-[-150%] opacity-0 bg-black text-white text-sm font-semibold px-4 py-2.5 rounded-xl z-50 max-w-[90%] text-center"
+      ></div>
+
+      <!-- Custom Alert Modal -->
+      <div id="alertModal" class="modal-backdrop">
+        <div class="modal-box">
+          <div class="pt-6 pb-2 px-5">
+            <div id="alertIcon" class="modal-icon" style="background:var(--yellow)">ℹ️</div>
+            <div id="alertTitle" class="modal-title">Info</div>
+            <div id="alertMessage" class="modal-message">Pesan</div>
+          </div>
+          <div class="modal-actions">
+            <button id="alertOkBtn" class="btn-modal btn-confirm" onclick="closeAlert()">OK</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Confirm Modal -->
+      <div id="confirmModal" class="modal-backdrop">
+        <div class="modal-box">
+          <div class="pt-6 pb-2 px-5">
+            <div id="confirmIcon" class="modal-icon" style="background:var(--red-bg)">⚠️</div>
+            <div id="confirmTitle" class="modal-title">Konfirmasi</div>
+            <div id="confirmMessage" class="modal-message">Yakin?</div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-modal btn-cancel" onclick="closeConfirm(false)" data-i18n="batal">Batal</button>
+            <button id="confirmOkBtn" class="btn-modal btn-danger" onclick="closeConfirm(true)" data-i18n="ok">OK</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Post Modal -->
+      <div id="successModal" class="modal-backdrop">
+        <div class="modal-box">
+          <div class="pt-6 pb-4 px-5 text-center">
+            <div class="success-check">
+              <svg viewBox="0 0 24 24"><polyline points="6 12 10 16 18 8"/></svg>
+            </div>
+            <div id="successTitle" class="modal-title" data-i18n="simpanBerhasil">Pemeriksaan berhasil disimpan</div>
+            <div id="successMessage" class="modal-message"></div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-modal btn-confirm" onclick="closeSuccess()" style="background:var(--green);border-color:var(--green)" data-i18n="ok">OK</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Report Image Modal -->
+      <div id="reportModal" class="modal-backdrop">
+        <div class="modal-box" style="max-width:380px">
+          <div class="pt-5 pb-2 px-5">
+            <div class="modal-title" data-i18n="laporanHarian">Laporan Harian Monitoring</div>
+            <div id="reportDate" class="modal-message"></div>
+          </div>
+          <div id="reportPreview" class="report-preview"></div>
+          <div class="report-actions">
+            <button class="btn-cancel" style="background:transparent;border:2.5px solid var(--ink);color:var(--ink)" onclick="closeReportModal()" data-i18n="tutup">Tutup</button>
+            <button id="reportDownloadBtn" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="downloadReportImage()" data-i18n="download">Download</button>
+            <button id="reportShareBtn" style="background:var(--orange);color:#fff;border-color:var(--orange)" onclick="shareReportImage()" data-i18n="share">Share</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Report Off-screen Canvas Target -->
+      <div id="reportCanvasTarget" style="position:fixed;left:-9999px;top:-9999px;width:390px;background:#fff;color:#151310;font-family:Poppins,sans-serif;padding:0;"></div>
+    </div>
+
+    <script>
+      /* ================================================================
+   KONFIGURASI
+   Isi dua nilai ini sesuai SETUP.md
+================================================================= */
+      const APPS_SCRIPT_URL =
+        "https://script.google.com/macros/s/AKfycby0Y6_1kxd5gIYjEc-u7x5EvUy7auJMzlfUfeDfTcvsnrqTcfVOJ2VDZYb7fCJOB7Gz/exec";
+      const GOOGLE_CLIENT_ID =
+        "15966134219-dg7pm2p2lvdficra7ithu0v782tnp3d3.apps.googleusercontent.com"; // kosongkan kalau belum setup Google OAuth
+
+      const backendReady = !APPS_SCRIPT_URL.includes("PASTE_WEB_APP_URL");
+
+      /* ================================================================
+   API HELPERS
+   POST dikirim sebagai text/plain supaya tidak kena CORS preflight
+   di Google Apps Script.
+================================================================= */
+      async function apiGet(action, params = {}) {
+        if (!backendReady) return null;
+        const qs = new URLSearchParams({ action, ...params }).toString();
+        const res = await fetch(`${APPS_SCRIPT_URL}?${qs}`);
+        return res.json();
+      }
+      async function apiPost(payload) {
+        if (!backendReady) return null;
+        const res = await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload),
+        });
+        return res.json();
+      }
+
+      /* ================================================================
+   DATA DEMO (dipakai kalau APPS_SCRIPT_URL belum diisi)
+================================================================= */
+      const DEMO_KATEGORI = [
+        { Kategori: "Kerapihan", SubKategori: "Beam Bangkok" },
+        { Kategori: "Kerapihan", SubKategori: "Beam Tanpa Lubang Kabel" },
+        { Kategori: "Kerapihan", SubKategori: "Rail Cover Hilang" },
+        { Kategori: "Kebersihan", SubKategori: "Noda / Kotor" },
+        { Kategori: "Kebersihan", SubKategori: "Tempel Stiker" },
+        { Kategori: "Kebersihan", SubKategori: "Lain - lain" },
+      ];
+      function buildDemoZona() {
+        const layout = {
+          9: { AB: {r:7, s:5}, AC: {r:7, s:5} },
+          10: { AD: {r:7, s:5}, AE: {r:7, s:5} },
+          11: { AF: {r:7, s:5}, AG: {r:7, s:5}, AH: {r:7, s:5}, AI: {r:7, s:5} },
+        };
+        const rows = [];
+        Object.keys(layout).forEach((z) =>
+          Object.keys(layout[z]).forEach((l) => {
+            const cfg = layout[z][l];
+            const rackCount = typeof cfg === 'object' ? cfg.r : cfg;
+            const shelfCount = typeof cfg === 'object' ? (cfg.s || 5) : 5;
+            for (let r = 1; r <= rackCount; r++)
+              for (let s = 1; s <= shelfCount; s++)
+                rows.push({ Zona: Number(z), Line: l, Rak: r, Shelf: s });
+          }),
+        );
+        return rows;
+      }
+      const DEMO_ZONA = buildDemoZona();
+      const DEMO_TEMUAN = [
+        {
+          Timestamp: "2026-08-09T00:00:00",
+          Zona: 9,
+          Line: "AB",
+          Rak: 1,
+          Shelf: 1,
+          Kategori: "Kerapihan",
+          SubKategori: "Beam Bangkok",
+          Catatan: "Beam bengkok karena terbentur forklift",
+          FotoURL: "",
+          Petugas: "Arga",
+        },
+        {
+          Timestamp: "2026-08-09T00:00:00",
+          Zona: 10,
+          Line: "AD",
+          Rak: 2,
+          Shelf: 1,
+          Kategori: "Kerapihan",
+          SubKategori: "Rail Cover Hilang",
+          Catatan: "Rail cover hilang karena user",
+          FotoURL: "",
+          Petugas: "Arga",
+        },
+      ];
+
+      /* ================================================================
+   STATE
+================================================================= */
+      let state = {
+        user: null,
+        masterZona: [],
+        masterKategori: [],
+        rakStatus: {},
+        activeRak: null,
+        slides: [],
+        currentSlide: 0,
+        language: localStorage.getItem("checklistLang") || "id",
+        theme: localStorage.getItem("checklistTheme") || "light",
+      };
+
+      /* ================================================================
+   TRANSLATIONS (ID / EN)
+================================================================ */
+      const T = {
+        id: {
+          dashboard: "Dashboard", checklist: "Checklist", detailTemuan: "Detail Temuan",
+          kepatuhanMingguIni: "Kepatuhan Minggu Ini", mingguIni: "Minggu Ini",
+          zonaTerbaik: "ZONA TERBAIK", zonaTerlemah: "ZONA TERLEMAH",
+          totalNok: "TOTAL NOK (OPEN)", pendingReview: "PENDING REVIEW",
+          trendKepatuhan: "Trend Kepatuhan", mingguTerakhir: "4 Minggu Terakhir",
+          trendEmpty: "Belum ada cukup data untuk menampilkan trend.",
+          quickFilter: "Quick Filter", semuaZona: "Semua zona",
+          belumAdaDataPemeriksaan: "Belum ada data pemeriksaan minggu ini.",
+          rak: "Rak", ok: "OK", nok: "NOK", zona: "Zona",
+          lokasiPemeriksaan: "Lokasi Pemeriksaan",
+          pilihLine: "Pilih Line *", pilihAtauKetikLine: "Pilih atau ketik line (mis. AB)",
+          pilihDariDaftar: "Pilih dari daftar atau ketik manual line-nya",
+          terisiOtomatis: "Terisi otomatis berdasarkan Line yang dipilih",
+          cekKondisiRak: "Cek Kondisi Rak", aman: "Aman", bermasalah: "Bermasalah",
+          pilihLineDulu: "Pilih line dulu untuk memuat daftar rak.",
+          ketukAman: "Ketuk untuk tandai <b>Aman</b> ✓ • Tahan 1 detik untuk tandai <b>Bermasalah</b> ⚠️ • Ketuk lagi pada rak bermasalah untuk membatalkan",
+          inputTemuan: "Input Temuan", rakBermasalah: "Rak bermasalah",
+          shelf: "Shelf (rak", pilih1AtauLebih: "Pilih 1 atau lebih shelf yang bermasalah pada rak ini",
+          slide: "Slide", kategori: "Kategori", pilihKategori: "Pilih kategori",
+          subKategori: "Sub kategori", pilihKeterangan: "Pilih keterangan",
+          catatanFoto: "Catatan & Foto", lampirkanFoto: "Lampirkan Foto",
+          isiCatatan: "Isi catatan", rakShelfBermasalah: "Rak X Shelf Bermasalah",
+          posting: "Posting", filterTanggal: "Filter Tanggal",
+          dari: "Dari", sampai: "Sampai", terapkan: "Terapkan", reset: "Reset",
+          exportPdf: "PDF", exportCsv: "CSV", laporanHarian: "Laporan Harian",
+          laporanHarianMonitoring: "Laporan Harian Monitoring",
+          darkMode: "Dark Mode", bahasa: "Bahasa",
+          hubungiAdmin: "Hubungi Admin", keluar: "Keluar",
+          profilSaya: "Profil Saya", tentangAplikasi: "Tentang Aplikasi",
+          signIN: "SIGN IN", help: "HELP", forgot: "FORGOT?",
+          orContinueWith: "OR CONTINUE WITH", lupaAkun: "LUPA AKUN?",
+          hubungiAdminBtn: "HUBUNGI ADMIN",
+          googleNotConfigured: "Login Google belum dikonfigurasi (isi GOOGLE_CLIENT_ID)",
+          batal: "Batal", ok: "OK", tutup: "Tutup", download: "Download", share: "Share",
+          confirmLogoutTitle: "Konfirmasi Keluar",
+          confirmLogoutMsg: "Yakin ingin keluar dari aplikasi?",
+          profilAnda: "Profil Anda",
+          nama: "Nama", email: "Email", loginVia: "Login via",
+          googleAccount: "Google Account", admin: "Admin",
+          versi: "Versi", aplikasiMonitoring: "Aplikasi monitoring kepatuhan penataan rak gudang DPD.",
+          lupaPasswordMsg: "Lupa password? Hubungi admin gudang untuk reset akun secara manual di sheet Administrator.",
+          daftarBaruMsg: "Akun baru dibuat oleh admin secara manual di sheet 'Administrator' pada Google Sheet.",
+          helpMsg: "Hubungi admin gudang untuk bantuan login.",
+          belumAdaTemuan: "Belum ada temuan pada rentang tanggal ini.",
+          semuaRiwayat: "Semua Riwayat",
+          terkiniSaja: "Terbaru Saja",
+          totalTemuan: "Total Temuan", dicetak: "Dicetak",
+          tidakAdaDataExport: "Tidak ada data untuk di-export.",
+          downloadBerhasil: "Berhasil di-download!", shareGagal: "Gagal share.",
+          copiedClipboard: "Data sudah dicopy ke clipboard!",
+          // Toast messages
+          masukModeDemo: "Masuk mode demo (Apps Script belum dikonfigurasi)",
+          verifikasiAkun: "Memverifikasi akun...",
+          prosesGoogle: "Memproses akun Google...",
+          selamatDatang: "Selamat datang",
+          gagalGoogle: "Gagal membaca data akun Google",
+          masukModeTesting: "Masuk mode testing...",
+          masukTesting: "Masuk tanpa login (mode testing)",
+          pilihLineValid: "Pilih line pemeriksaan yang valid dulu",
+          periksaMinimal1: "Periksa minimal 1 rak dulu (tap = aman, tahan = bermasalah)",
+          lengkapiKategori: "Lengkapi kategori & sub kategori untuk Rak X Shelf Y",
+          simpanBerhasil: "Pemeriksaan berhasil disimpan ✅",
+          gagalSimpan: "Gagal simpan ke server: ",
+          // Daily report
+          zon: "Zon", lin: "Lin", temuan: "Temuan", catatan: "Catatan",
+          petugas: "Petugas", tglLaporan: "Tanggal Laporan",
+          totalTemuanCount: "Total {n} Temuan",
+        },
+        en: {
+          dashboard: "Dashboard", checklist: "Checklist", detailTemuan: "Findings Detail",
+          kepatuhanMingguIni: "Weekly Compliance", mingguIni: "This Week",
+          zonaTerbaik: "BEST ZONE", zonaTerlemah: "WEAKEST ZONE",
+          totalNok: "TOTAL NOK (OPEN)", pendingReview: "PENDING REVIEW",
+          trendKepatuhan: "Compliance Trend", mingguTerakhir: "Last 4 Weeks",
+          trendEmpty: "Not enough data to display trend.",
+          quickFilter: "Quick Filter", semuaZona: "All zones",
+          belumAdaDataPemeriksaan: "No inspection data this week.",
+          rak: "Rack", ok: "OK", nok: "NOK", zona: "Zone",
+          lokasiPemeriksaan: "Inspection Location",
+          pilihLine: "Select Line *", pilihAtauKetikLine: "Select or type line (e.g. AB)",
+          pilihDariDaftar: "Choose from list or type the line manually",
+          terisiOtomatis: "Auto-filled based on selected Line",
+          cekKondisiRak: "Check Rack Condition", aman: "OK", bermasalah: "Problem",
+          pilihLineDulu: "Select a line first to load rack list.",
+          ketukAman: "Tap to mark <b>OK</b> ✓ • Hold 1 sec to mark <b>Problem</b> ⚠️ • Tap again on problem rack to cancel",
+          inputTemuan: "Finding Input", rakBermasalah: "Problem racks",
+          shelf: "Shelf (rack", pilih1AtauLebih: "Select 1 or more problem shelves on this rack",
+          slide: "Slide", kategori: "Category", pilihKategori: "Select category",
+          subKategori: "Sub category", pilihKeterangan: "Select detail",
+          catatanFoto: "Notes & Photo", lampirkanFoto: "Attach Photo",
+          isiCatatan: "Write notes", rakShelfBermasalah: "Rack X Shelf Problem",
+          posting: "Submit", filterTanggal: "Date Filter",
+          dari: "From", sampai: "To", terapkan: "Apply", reset: "Reset",
+          exportPdf: "PDF", exportCsv: "CSV", laporanHarian: "Daily Report",
+          laporanHarianMonitoring: "Daily Monitoring Report",
+          darkMode: "Dark Mode", bahasa: "Language",
+          hubungiAdmin: "Contact Admin", keluar: "Logout",
+          profilSaya: "My Profile", tentangAplikasi: "About App",
+          signIN: "SIGN IN", help: "HELP", forgot: "FORGOT?",
+          orContinueWith: "OR CONTINUE WITH", lupaAkun: "FORGOT ACCOUNT?",
+          hubungiAdminBtn: "CONTACT ADMIN",
+          googleNotConfigured: "Google login not configured (fill GOOGLE_CLIENT_ID)",
+          batal: "Cancel", ok: "OK", tutup: "Close", download: "Download", share: "Share",
+          confirmLogoutTitle: "Confirm Logout",
+          confirmLogoutMsg: "Are you sure you want to logout?",
+          profilAnda: "Your Profile",
+          nama: "Name", email: "Email", loginVia: "Login via",
+          googleAccount: "Google Account", admin: "Admin",
+          versi: "Version", aplikasiMonitoring: "DPD warehouse rack compliance monitoring app.",
+          lupaPasswordMsg: "Forgot password? Contact warehouse admin to reset account manually in Administrator sheet.",
+          daftarBaruMsg: "New accounts are created manually by admin in 'Administrator' sheet on Google Sheet.",
+          helpMsg: "Contact warehouse admin for login assistance.",
+          belumAdaTemuan: "No findings in this date range.",
+          semuaRiwayat: "All History",
+          terkiniSaja: "Latest Only",
+          totalTemuan: "Total Findings", dicetak: "Printed",
+          tidakAdaDataExport: "No data to export.",
+          downloadBerhasil: "Downloaded successfully!", shareGagal: "Share failed.",
+          copiedClipboard: "Data copied to clipboard!",
+          masukModeDemo: "Entering demo mode (Apps Script not configured)",
+          verifikasiAkun: "Verifying account...",
+          prosesGoogle: "Processing Google account...",
+          selamatDatang: "Welcome",
+          gagalGoogle: "Failed to read Google account data",
+          masukModeTesting: "Entering testing mode...",
+          masukTesting: "Logged in without login (testing mode)",
+          pilihLineValid: "Select a valid inspection line first",
+          periksaMinimal1: "Check at least 1 rack first (tap = OK, hold = problem)",
+          lengkapiKategori: "Complete category & sub category for Rack X Shelf Y",
+          simpanBerhasil: "Inspection saved successfully ✅",
+          gagalSimpan: "Failed to save to server: ",
+          zon: "Zon", lin: "Ln", temuan: "Finding", catatan: "Notes",
+          petugas: "Inspector", tglLaporan: "Report Date",
+          totalTemuanCount: "Total {n} Findings",
+        },
+      };
+      function t(key) { return T[state.language]?.[key] || T.id[key] || key; }
+
+      function applyLanguage() {
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          const key = el.getAttribute("data-i18n");
+          const txt = t(key);
+          if (txt) {
+            if (el.tagName === "OPTION") el.textContent = txt;
+            else el.innerHTML = txt;
+          }
+        });
+        document.getElementById("langID").classList.toggle("active", state.language === "id");
+        document.getElementById("langEN").classList.toggle("active", state.language === "en");
+        document.documentElement.lang = state.language === "en" ? "en" : "id";
+      }
+
+      function setLanguage(lang) {
+        state.language = lang;
+        localStorage.setItem("checklistLang", lang);
+        applyLanguage();
+        if (document.getElementById("page-dashboard").classList.contains("active")) loadDashboard();
+        if (document.getElementById("page-detail").classList.contains("active")) loadDetailTemuan();
+      }
+
+      /* ================================================================
+   DARK MODE
+================================================================ */
+      function applyTheme() {
+        document.documentElement.setAttribute("data-theme", state.theme);
+        const toggle = document.getElementById("darkModeToggle");
+        if (toggle) toggle.checked = state.theme === "dark";
+      }
+
+      function toggleDarkMode() {
+        state.theme = document.getElementById("darkModeToggle").checked ? "dark" : "light";
+        localStorage.setItem("checklistTheme", state.theme);
+        applyTheme();
+      }
+
+      /* ================================================================
+   CUSTOM MODAL (replaces alert/confirm)
+================================================================ */
+      let _alertResolve = null;
+      function showAlert({ title = "Info", message = "", type = "info", buttonText }) {
+        return new Promise((resolve) => {
+          _alertResolve = resolve;
+          const modal = document.getElementById("alertModal");
+          const icon = document.getElementById("alertIcon");
+          const iconMap = { info: ["ℹ️","var(--yellow)"], success: ["✅","var(--green-bg)"], warning: ["⚠️","var(--yellow)"], danger: ["🚨","var(--red-bg)"] };
+          const [ic, bg] = iconMap[type] || iconMap.info;
+          icon.textContent = ic;
+          icon.style.background = bg;
+          document.getElementById("alertTitle").textContent = title;
+          document.getElementById("alertMessage").innerHTML = message;
+          document.getElementById("alertOkBtn").textContent = buttonText || t("ok");
+          modal.classList.add("show");
+        });
+      }
+      function closeAlert() {
+        document.getElementById("alertModal").classList.remove("show");
+        if (_alertResolve) { _alertResolve(); _alertResolve = null; }
+      }
+
+      let _confirmResolve = null;
+      function showConfirm({ title = "Konfirmasi", message = "", type = "danger", confirmText, cancelText }) {
+        return new Promise((resolve) => {
+          _confirmResolve = resolve;
+          const modal = document.getElementById("confirmModal");
+          const icon = document.getElementById("confirmIcon");
+          const iconMap = { danger: ["⚠️","var(--red-bg)"], warning: ["⚠️","var(--yellow)"], info: ["ℹ️","var(--yellow)"] };
+          const [ic, bg] = iconMap[type] || iconMap.danger;
+          icon.textContent = ic;
+          icon.style.background = bg;
+          document.getElementById("confirmTitle").textContent = title;
+          document.getElementById("confirmMessage").innerHTML = message;
+          document.getElementById("confirmOkBtn").textContent = confirmText || t("ok");
+          modal.querySelector(".btn-cancel").textContent = cancelText || t("batal");
+          modal.classList.add("show");
+        });
+      }
+      function closeConfirm(result) {
+        document.getElementById("confirmModal").classList.remove("show");
+        if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null; }
+      }
+
+      /* ================================================================
+   EXPORT - PDF
+================================================================ */
+      /* ================================================================
+   DYNAMIC CDN LOADER
+================================================================ */
+      function loadScript(url) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = url;
+          s.onload = resolve;
+          s.onerror = () => reject(new Error("Gagal load: " + url));
+          document.head.appendChild(s);
+        });
+      }
+
+      async function ensureJsPDF() {
+        if (window.jspdf && window.jspdf.jsPDF) return true;
+        try {
+          await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
+          await loadScript("https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js");
+          return !!(window.jspdf && window.jspdf.jsPDF);
+        } catch (e) {
+          console.warn("jsPDF dynamic load failed:", e);
+          return false;
+        }
+      }
+
+      /* ================================================================
+   EXPORT - PDF
+================================================================ */
+      async function exportPDF() {
+        showLoading(state.language === "en" ? "Generating PDF..." : "Membuat PDF...");
+        const rows = await getCurrentTemuanRows();
+        if (!rows.length) { hideLoading(); showAlert({ title: t("exportPdf"), message: t("tidakAdaDataExport"), type: "info" }); return; }
+        try {
+          const loaded = await ensureJsPDF();
+          if (!loaded) throw new Error("jsPDF tidak bisa di-load. Cek koneksi internet.");
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(14);
+          doc.text("Laporan Temuan Checklist DPD", 14, 15);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          const from = document.getElementById("filterFrom").value;
+          const to = document.getElementById("filterTo").value;
+          const range = from || to ? `${from || "..."} s/d ${to || "..."}` : "Semua tanggal";
+          doc.text(`Periode: ${range}  |  Dicetak: ${new Date().toLocaleString("id-ID")}`, 14, 22);
+          doc.autoTable({
+            startY: 28,
+            head: [[t("tglLaporan"), t("zon"), t("lin"), t("rak"), "Shelf", t("kategori"), t("subKategori"), t("catatan"), t("petugas")]],
+            body: rows.map(r => {
+              const d = r.Timestamp ? new Date(r.Timestamp) : new Date();
+              let h = d.getHours();
+              const ampm = h >= 12 ? "PM" : "AM";
+              h = h % 12; if (h === 0) h = 12;
+              const ts = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")},${String(h).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")} ${ampm}`;
+              return [
+                ts,
+                r.Zona, r.Line, r.Rak, r.Shelf, r.Kategori, r.SubKategori, r.Catatan || "", r.Petugas || ""
+              ];
+            }),
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [21, 17, 16], textColor: 255 },
+            alternateRowStyles: { fillColor: [245, 242, 235] },
+            margin: { left: 14 }
+          });
+          doc.save(`Laporan_Temuan_DPD_${new Date().toISOString().slice(0,10)}.pdf`);
+          hideLoading();
+          showAlert({ title: "PDF", message: t("downloadBerhasil"), type: "success" });
+        } catch (err) {
+          hideLoading();
+          showAlert({ title: "PDF", message: "Gagal generate PDF: " + err.message, type: "danger" });
+        }
+      }
+
+      /* ================================================================
+   EXPORT - CSV
+================================================================ */
+      async function exportCSV() {
+        showLoading(state.language === "en" ? "Generating CSV..." : "Membuat CSV...");
+        const rows = await getCurrentTemuanRows();
+        if (!rows.length) { hideLoading(); showAlert({ title: t("exportCsv"), message: t("tidakAdaDataExport"), type: "info" }); return; }
+
+        function fmtTimestamp(ts) {
+          const d = ts ? new Date(ts) : new Date();
+          const y = d.getFullYear();
+          const mo = String(d.getMonth()+1).padStart(2,"0");
+          const dd = String(d.getDate()).padStart(2,"0");
+          let h = d.getHours();
+          const ampm = h >= 12 ? "PM" : "AM";
+          h = h % 12; if (h === 0) h = 12;
+          const mm = String(d.getMinutes()).padStart(2,"0");
+          return `${y}-${mo}-${dd},${String(h).padStart(2,"0")}:${mm} ${ampm}`;
+        }
+
+        const headers = ["Timestamp","Zona","Line","Rak","Shelf","Kategori","SubKategori","Catatan","Petugas","Status"];
+        const csvRows = [headers.join(",")];
+        rows.forEach(r => {
+          csvRows.push([
+            `"${fmtTimestamp(r.Timestamp)}"`,
+            r.Zona, r.Line, r.Rak, r.Shelf,
+            `"${(r.Kategori||"").replace(/"/g,'""')}"`,
+            `"${(r.SubKategori||"").replace(/"/g,'""')}"`,
+            `"${(r.Catatan||"").replace(/"/g,'""')}"`,
+            `"${(r.Petugas||"").replace(/"/g,'""')}"`,
+            r.Status || ""
+          ].join(","));
+        });
+        const blob = new Blob(["\uFEFF" + csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Laporan_Temuan_DPD_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        hideLoading();
+        showAlert({ title: "CSV", message: t("downloadBerhasil"), type: "success" });
+      }
+
+      async function getCurrentTemuanRows() {
+        const from = document.getElementById("filterFrom").value;
+        const to = document.getElementById("filterTo").value;
+        if (state._lastTemuanRows && state._lastTemuanFilterFrom === from && state._lastTemuanFilterTo === to) {
+          return state._lastTemuanRows;
+        }
+        let rows;
+        try {
+          rows = backendReady ? await apiGet("temuan", { from, to }) : null;
+        } catch (e) {
+          console.warn(e.message);
+        }
+        if (!rows) {
+          rows = DEMO_TEMUAN.filter((t) => {
+            const d = new Date(t.Timestamp);
+            if (from && d < new Date(from)) return false;
+            if (to) {
+              const tEnd = new Date(to);
+              tEnd.setHours(23, 59, 59);
+              if (d > tEnd) return false;
+            }
+            return true;
+          });
+        }
+        state._lastTemuanRows = rows;
+        state._lastTemuanFilterFrom = from;
+        state._lastTemuanFilterTo = to;
+        return rows;
+      }
+
+      async function getCurrentTemuanLatestRows() {
+        const from = document.getElementById("filterFrom").value;
+        const to = document.getElementById("filterTo").value;
+        let rows;
+        try {
+          rows = backendReady ? await apiGet("temuanLatest", { from, to }) : null;
+        } catch (e) {
+          console.warn(e.message);
+        }
+        if (!rows) {
+          const all = DEMO_TEMUAN.filter((t) => {
+            const d = new Date(t.Timestamp);
+            if (from && d < new Date(from)) return false;
+            if (to) {
+              const tEnd = new Date(to);
+              tEnd.setHours(23, 59, 59);
+              if (d > tEnd) return false;
+            }
+            return true;
+          });
+          const latest = {};
+          all.forEach(r => {
+            const key = (r.Line || '') + '|' + (r.Rak || '') + '|' + (r.Shelf || '');
+            if (!latest[key] || new Date(r.Timestamp) > new Date(latest[key].Timestamp)) {
+              latest[key] = r;
+            }
+          });
+          rows = Object.values(latest);
+        }
+        return rows;
+      }
+
+      /* ================================================================
+   DAILY REPORT - Generate Image
+================================================================ */
+      let _reportBlobUrl = null;
+      async function generateDailyReport() {
+        const rows = await getCurrentTemuanLatestRows();
+        if (!rows.length) { showAlert({ title: t("laporanHarian"), message: t("tidakAdaDataExport"), type: "info" }); return; }
+
+        showLoading(state.language === "en" ? "Generating report..." : "Membuat laporan...");
+        const today = new Date();
+        const dateStr = today.toLocaleDateString(state.language === "en" ? "en-US" : "id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+        let tableRows = rows.map((r, i) => {
+          const sub = (r.SubKategori || r.Kategori || "-");
+          const cat = (r.Catatan || "-");
+          return `<tr>
+            <td style="padding:6px 8px;border:1px solid #ddd;font-size:11px;text-align:center">${i + 1}</td>
+            <td style="padding:6px 8px;border:1px solid #ddd;font-size:11px;font-weight:600;text-align:center">${r.Zona}</td>
+            <td style="padding:6px 8px;border:1px solid #ddd;font-size:11px;text-align:center">${r.Line}</td>
+            <td style="padding:6px 8px;border:1px solid #ddd;font-size:11px;text-align:center">${r.Rak}</td>
+            <td style="padding:6px 8px;border:1px solid #ddd;font-size:11px;text-align:center">${r.Shelf}</td>
+            <td style="padding:6px 8px;border:1px solid #ddd;font-size:11px">${sub}</td>
+            <td style="padding:6px 8px;border:1px solid #ddd;font-size:11px">${cat}</td>
+          </tr>`;
+        }).join("");
+
+        const petugasList = state.user?.name || state.user?.email || "User";
+
+        const target = document.getElementById("reportCanvasTarget");
+        target.innerHTML = `
+          <div style="padding:24px 20px;background:#fff;width:390px;box-sizing:border-box">
+            <div style="text-align:center;border-bottom:3px solid #151310;padding-bottom:12px;margin-bottom:16px">
+              <div style="font-size:18px;font-weight:900;color:#151310;letter-spacing:0.5px">CHECKLIST DPD</div>
+              <div style="font-size:12px;font-weight:600;color:#ff5a1f;margin-top:2px">${t("laporanHarianMonitoring")}</div>
+              <div style="font-size:11px;color:#888;margin-top:6px">${dateStr}</div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;border:2px solid #151310;margin-bottom:14px">
+              <thead>
+                <tr style="background:#151310;color:#fff">
+                  <th style="padding:6px 8px;font-size:10px;font-weight:700;border:1px solid #333">#</th>
+                  <th style="padding:6px 8px;font-size:10px;font-weight:700;border:1px solid #333">${t("zon")}</th>
+                  <th style="padding:6px 8px;font-size:10px;font-weight:700;border:1px solid #333">${t("lin")}</th>
+                  <th style="padding:6px 8px;font-size:10px;font-weight:700;border:1px solid #333">${t("rak")}</th>
+                  <th style="padding:6px 8px;font-size:10px;font-weight:700;border:1px solid #333">Shelf</th>
+                  <th style="padding:6px 8px;font-size:10px;font-weight:700;border:1px solid #333;text-align:left">${t("temuan")}</th>
+                  <th style="padding:6px 8px;font-size:10px;font-weight:700;border:1px solid #333;text-align:left">${t("catatan")}</th>
+                </tr>
+              </thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;border-top:2px solid #ddd;padding-top:10px">
+              <div><b>${t("petugas")}:</b> ${petugasList}</div>
+              <div><b>${t("dicetak")}:</b> ${today.toLocaleString("id-ID", {hour:"2-digit",minute:"2-digit"})}</div>
+            </div>
+            <div style="text-align:center;margin-top:12px;font-size:9px;color:#aaa">Checklist DPD Monitoring • Developed by Argaft</div>
+          </div>`;
+
+        try {
+          const canvas = await html2canvas(target.firstElementChild, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+          if (_reportBlobUrl) URL.revokeObjectURL(_reportBlobUrl);
+          const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
+          _reportBlobUrl = URL.createObjectURL(blob);
+
+          hideLoading();
+          document.getElementById("reportDate").textContent = dateStr;
+          document.getElementById("reportPreview").innerHTML = `<img src="${_reportBlobUrl}" alt="report" />`;
+          document.getElementById("reportModal").classList.add("show");
+        } catch (err) {
+          hideLoading();
+          showAlert({ title: "Error", message: "Gagal generate gambar: " + err.message, type: "danger" });
+        }
+      }
+
+      function closeReportModal() {
+        document.getElementById("reportModal").classList.remove("show");
+      }
+
+      async function downloadReportImage() {
+        if (!_reportBlobUrl) return;
+        const a = document.createElement("a");
+        a.href = _reportBlobUrl;
+        a.download = `Laporan_Harian_DPD_${new Date().toISOString().slice(0,10)}.png`;
+        a.click();
+        showAlert({ title: "OK", message: t("downloadBerhasil"), type: "success" });
+      }
+
+      async function shareReportImage() {
+        if (!_reportBlobUrl) return;
+        try {
+          const blob = await fetch(_reportBlobUrl).then(r => r.blob());
+          const file = new File([blob], `Laporan_Harian_DPD.png`, { type: "image/png" });
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ title: t("laporanHarianMonitoring"), files: [file] });
+          } else {
+            await navigator.clipboard.writeText(t("copiedClipboard"));
+            showAlert({ title: "Share", message: t("copiedClipboard"), type: "info" });
+          }
+        } catch (err) {
+          if (err.name !== "AbortError") showAlert({ title: "Share", message: t("shareGagal"), type: "danger" });
+        }
+      }
+
+      /* ================================================================
+   JAM & TOAST
+================================================================= */
+      function tickClock() {
+        const clockEl = document.getElementById("clockTime");
+        if (!clockEl) return;
+        const d = new Date();
+        let h = d.getHours(),
+          m = d.getMinutes();
+        const ampm = h >= 12 ? "PM" : "AM";
+        h = h % 12;
+        if (h === 0) h = 12;
+        clockEl.textContent = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
+      }
+      tickClock();
+      setInterval(tickClock, 30000);
+
+      function toast(msg, isError = false) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.style.background = isError ? "#C0392B" : "#151310";
+        t.style.transform = "translate(-50%, 0)";
+        t.style.opacity = "1";
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => {
+          t.style.transform = "translate(-50%, -150%)";
+          t.style.opacity = "0";
+        }, 2400);
+      }
+
+      /* ================================================================
+   LOADING OVERLAY
+================================================================ */
+      function showLoading(text = "Masuk...") {
+        document.getElementById("loadingText").textContent = text;
+        document.getElementById("loadingOverlay").classList.add("show");
+      }
+      function hideLoading() {
+        document.getElementById("loadingOverlay").classList.remove("show");
+      }
+
+      /* ================================================================
+   SETTINGS DROPDOWN
+================================================================ */
+      function toggleSettings(e) {
+        e && e.stopPropagation();
+        const dd = document.getElementById("settingsDropdown");
+        const bd = document.getElementById("settingsBackdrop");
+        const isOpen = dd.classList.contains("open");
+        if (isOpen) {
+          closeSettings();
+        } else {
+          dd.classList.add("open");
+          bd.classList.add("show");
+        }
+      }
+      function closeSettings() {
+        document.getElementById("settingsDropdown").classList.remove("open");
+        document.getElementById("settingsBackdrop").classList.remove("show");
+      }
+
+      function renderUserAvatar() {
+        const user = state.user;
+        if (!user) return;
+
+        const headerImg = document.getElementById("userAvatarImg");
+        const headerFallback = document.getElementById("userAvatarFallback");
+        const sdImg = document.getElementById("sdAvatarImg");
+        const sdFallback = document.getElementById("sdAvatarFallback");
+        const sdName = document.getElementById("sdName");
+        const sdEmail = document.getElementById("sdEmail");
+
+        if (user.picture) {
+          headerImg.src = user.picture;
+          headerImg.classList.remove("hidden");
+          headerFallback.classList.add("hidden");
+          sdImg.src = user.picture;
+          sdImg.classList.remove("hidden");
+          sdFallback.classList.add("hidden");
+        } else {
+          headerImg.classList.add("hidden");
+          headerFallback.classList.remove("hidden");
+          headerFallback.textContent = (user.name || "U").charAt(0).toUpperCase();
+          sdImg.classList.add("hidden");
+          sdFallback.classList.remove("hidden");
+          sdFallback.textContent = (user.name || "U").charAt(0).toUpperCase();
+        }
+        sdName.textContent = user.name || "User";
+        sdEmail.textContent = user.email || "Tidak ada email";
+      }
+
+      function showProfileInfo() {
+        closeSettings();
+        const u = state.user;
+        if (!u) return;
+        const loginType = u.email ? t("googleAccount") : t("admin");
+        showAlert({
+          title: t("profilAnda"),
+          message: `<b>${t("nama")}:</b> ${u.name || "-"}<br><b>${t("email")}:</b> ${u.email || "-"}<br><b>${t("loginVia")}:</b> ${loginType}`,
+          type: "info"
+        });
+      }
+
+      function showAppInfo() {
+        closeSettings();
+        showAlert({
+          title: "Checklist DPD " + t("versi") + " 1.0",
+          message: t("aplikasiMonitoring") + "<br><br><b>Developed by Argaft</b>",
+          type: "info"
+        });
+      }
+
+      /* ================================================================
+   LOGIN - Administrator
+================================================================ */
+      function togglePw() {
+        const el = document.getElementById("loginPassword");
+        el.type = el.type === "password" ? "text" : "password";
+      }
+
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const username = document
+            .getElementById("loginUsername")
+            .value.trim();
+          const password = document.getElementById("loginPassword").value;
+          const errEl = document.getElementById("loginError");
+          const submitBtn = document.getElementById("loginSubmitBtn");
+          errEl.classList.add("hidden");
+
+          if (!backendReady) {
+            showLoading(state.language === "en" ? "Entering demo mode..." : "Masuk mode demo...");
+            state.user = { name: username || "Admin (demo)", email: "" };
+            localStorage.setItem("checklistUser", JSON.stringify(state.user));
+            setTimeout(() => {
+              hideLoading();
+              enterApp();
+              toast(t("masukModeDemo"));
+            }, 800);
+            return;
+          }
+
+          submitBtn.classList.add("btn-loading");
+          showLoading(t("verifikasiAkun"));
+
+          try {
+            const res = await apiGet("adminLogin", { username, password });
+            if (!res.ok) {
+              hideLoading();
+              submitBtn.classList.remove("btn-loading");
+              errEl.textContent = res.message || "Login gagal";
+              errEl.classList.remove("hidden");
+              return;
+            }
+            state.user = { name: res.nama, email: "" };
+            localStorage.setItem("checklistUser", JSON.stringify(state.user));
+            setTimeout(() => {
+              hideLoading();
+              submitBtn.classList.remove("btn-loading");
+              enterApp();
+            }, 600);
+          } catch (err) {
+            hideLoading();
+            submitBtn.classList.remove("btn-loading");
+            errEl.textContent = "Gagal terhubung ke server: " + err.message;
+            errEl.classList.remove("hidden");
+          }
+        });
+
+      function handleForgotPassword() {
+        showAlert({ title: t("forgot"), message: t("lupaPasswordMsg"), type: "warning" });
+      }
+      function handleSignUp() {
+        showAlert({ title: t("hubungiAdminBtn"), message: t("daftarBaruMsg"), type: "info" });
+      }
+
+      /* ================================================================
+   LOGIN - Google (Google Identity Services)
+================================================================= */
+      function initGoogleLogin() {
+        if (!GOOGLE_CLIENT_ID) {
+          document
+            .getElementById("googleDisabledNote")
+            .classList.remove("hidden");
+          return;
+        }
+        if (!window.google || !google.accounts) {
+          setTimeout(initGoogleLogin, 300);
+          return;
+        }
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCredential,
+        });
+        google.accounts.id.renderButton(
+          document.getElementById("googleBtnWrap"),
+          {
+            theme: "outline",
+            size: "large",
+            shape: "pill",
+            text: "signin_with",
+          },
+        );
+      }
+      window.addEventListener("load", () => {
+        applyTheme();
+        applyLanguage();
+        initGoogleLogin();
+        const savedUser = localStorage.getItem("checklistUser");
+        if (savedUser) {
+          try {
+            state.user = JSON.parse(savedUser);
+            enterApp();
+          } catch (e) {
+            localStorage.removeItem("checklistUser");
+          }
+        }
+      });
+
+      function parseJwt(token) {
+        try {
+          const base64 = token
+            .split(".")[1]
+            .replace(/-/g, "+")
+            .replace(/_/g, "/");
+          return JSON.parse(
+            decodeURIComponent(
+              atob(base64)
+                .split("")
+                .map(
+                  (c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2),
+                )
+                .join(""),
+            ),
+          );
+        } catch (e) {
+          return null;
+        }
+      }
+
+      async function handleGoogleCredential(response) {
+        showLoading(t("prosesGoogle"));
+        const payload = parseJwt(response.credential);
+        if (!payload) {
+          hideLoading();
+          toast("Gagal membaca data akun Google", true);
+          return;
+        }
+        state.user = {
+          name: payload.name,
+          email: payload.email,
+          picture: payload.picture,
+        };
+        localStorage.setItem("checklistUser", JSON.stringify(state.user));
+        if (backendReady) {
+          try {
+            await apiPost({
+              action: "verifyGoogleToken",
+              idToken: response.credential,
+            });
+          } catch (e) {
+            console.warn("Verifikasi token Google gagal:", e.message);
+          }
+        }
+        setTimeout(() => {
+          hideLoading();
+          enterApp();
+          toast(`${t("selamatDatang")}, ${payload.name.split(" ")[0]}!`);
+        }, 700);
+      }
+
+      /* ================================================================
+   SKIP / LOGOUT
+================================================================= */
+      function skipLogin() {
+        showLoading(t("masukModeTesting"));
+        state.user = { name: "Tester", email: "" };
+        localStorage.setItem("checklistUser", JSON.stringify(state.user));
+        setTimeout(() => {
+          hideLoading();
+          enterApp();
+          toast(t("masukTesting"));
+        }, 600);
+      }
+
+      function confirmLogout() {
+        closeSettings();
+        showConfirm({
+          title: t("confirmLogoutTitle"),
+          message: t("confirmLogoutMsg"),
+          type: "danger",
+          confirmText: t("keluar"),
+        }).then((yes) => {
+          if (yes) logout();
+        });
+      }
+
+      function logout() {
+        state.user = null;
+        localStorage.removeItem("checklistUser");
+        document
+          .querySelectorAll(".page")
+          .forEach((p) => p.classList.remove("active"));
+        document.getElementById("page-login").classList.add("active");
+        document.getElementById("appHeader").classList.add("hidden");
+        document.getElementById("bottomNav").classList.add("hidden");
+        document.getElementById("userAvatarImg").classList.add("hidden");
+        document.getElementById("userAvatarFallback").classList.remove("hidden");
+        document.getElementById("userAvatarFallback").textContent = "👤";
+      }
+
+      function enterApp() {
+        document.getElementById("page-login").classList.remove("active");
+        document.getElementById("appHeader").classList.remove("hidden");
+        document.getElementById("bottomNav").classList.remove("hidden");
+        renderUserAvatar();
+        loadMasterData().then(() => {
+          loadDashboard();
+          loadDetailTemuan();
+          goTo("dashboard");
+        });
+      }
+
+      /* ================================================================
+   NAVIGASI
+================================================================= */
+      function goTo(name) {
+        document
+          .querySelectorAll(".page")
+          .forEach((p) => p.classList.remove("active"));
+        document.getElementById("page-" + name).classList.add("active");
+
+        const titles = {
+          dashboard: t("dashboard"),
+          checklist: t("checklist"),
+          detail: t("detailTemuan"),
+        };
+        const titleEl = document.getElementById("pageMainTitle");
+        if (titleEl) titleEl.textContent = titles[name] || name;
+        document.querySelectorAll(".nav-btn").forEach((b) => {
+          b.classList.toggle("text-white/50", b.dataset.nav !== name);
+          b.classList.toggle("text-[var(--orange)]", b.dataset.nav === name);
+        });
+        if (name === "dashboard") loadDashboard();
+      }
+
+      /* ================================================================
+   MASTER DATA
+================================================================= */
+      async function loadMasterData() {
+        try {
+          const [zona, kategori] = backendReady
+            ? await Promise.all([
+                apiGet("masterZona"),
+                apiGet("masterKategori"),
+              ])
+            : [DEMO_ZONA, DEMO_KATEGORI];
+          state.masterZona = zona && zona.length ? zona : DEMO_ZONA;
+          state.masterKategori =
+            kategori && kategori.length ? kategori : DEMO_KATEGORI;
+        } catch (e) {
+          console.warn("Pakai data demo master:", e.message);
+          state.masterZona = DEMO_ZONA;
+          state.masterKategori = DEMO_KATEGORI;
+        }
+
+        // datalist Line
+        const lines = [
+          ...new Set(state.masterZona.map((r) => String(r.Line))),
+        ].sort();
+        document.getElementById("lineOptions").innerHTML = lines
+          .map((l) => `<option value="${l}">`)
+          .join("");
+
+        // dropdown kategori
+        const cats = [...new Set(state.masterKategori.map((r) => r.Kategori))];
+        const katSel = document.getElementById("kategoriSelect");
+        katSel.innerHTML =
+          '<option value="">Pilih kategori</option>' +
+          cats.map((c) => `<option value="${c}">${c}</option>`).join("");
+
+        // quick filter zona
+        const zonas = [
+          ...new Set(state.masterZona.map((r) => String(r.Zona))),
+        ].sort((a, b) => a - b);
+        document.getElementById("quickFilter").innerHTML =
+          '<option value="">Semua zona</option>' +
+          zonas.map((z) => `<option value="${z}">ZONA ${z}</option>`).join("");
+      }
+
+      /* ================================================================
+   DASHBOARD
+================================================================= */
+      let lastDashboard = null;
+
+      async function loadDashboard() {
+        let d;
+        try {
+          d = backendReady ? await apiGet("dashboard") : null;
+        } catch (e) {
+          console.warn(e.message);
+        }
+        if (!d) {
+          d = {
+            compliance: 0,
+            okCount: 0,
+            nokCount: 0,
+            checkedCount: 0,
+            pendingCount: state.masterZona.length,
+            totalRakMaster: state.masterZona.length,
+            bestZone: null,
+            worstZone: null,
+            zoneTable: [],
+          };
+        }
+        lastDashboard = d;
+
+        document.getElementById("compliancePct").textContent =
+          d.compliance + "%";
+        document
+          .getElementById("gaugeArc")
+          .setAttribute("stroke-dasharray", d.compliance + " 100");
+        document.getElementById("checkedSummary").textContent =
+          `${d.checkedCount} / ${d.totalRakMaster} ${t("rak").toLowerCase()} ${state.language === "en" ? "checked this week" : "sudah diperiksa minggu ini"}`;
+        document.getElementById("bestZone").textContent = d.bestZone
+          ? `ZONA ${d.bestZone.zona} 🏆`
+          : state.language === "en" ? "No data yet" : "Belum ada data";
+        document.getElementById("worstZone").textContent = d.worstZone
+          ? `ZONA ${d.worstZone.zona} ⚠️`
+          : state.language === "en" ? "No data yet" : "Belum ada data";
+        document.getElementById("totalNok").textContent = d.nokCount + " RAK";
+        document.getElementById("pendingReview").textContent =
+          d.pendingCount + " RAK";
+
+        renderZoneTable();
+        loadTrend();
+      }
+
+      /* ================================================================
+   TREND KEPATUHAN (4 minggu terakhir)
+================================================================= */
+      async function loadTrend() {
+        let data;
+        try {
+          data = backendReady ? await apiGet("trend", { weeks: 4 }) : null;
+        } catch (e) {
+          console.warn(e.message);
+        }
+
+        if (!data || !data.length) {
+          // fallback demo: 3 minggu kosong + minggu ini pakai compliance dari dashboard demo
+          const curr = lastDashboard ? lastDashboard.compliance : 0;
+          data = [
+            { weekLabel: "-3mgg", compliance: 0, checkedCount: 0 },
+            { weekLabel: "-2mgg", compliance: 0, checkedCount: 0 },
+            { weekLabel: "-1mgg", compliance: 0, checkedCount: 0 },
+            {
+              weekLabel: "Minggu Ini",
+              compliance: curr,
+              checkedCount: lastDashboard ? lastDashboard.checkedCount : 0,
+            },
+          ];
+        }
+        renderTrendChart(data);
+      }
+
+      function renderTrendChart(data) {
+        const svg = document.getElementById("trendSvg");
+        const labelsWrap = document.getElementById("trendLabels");
+        const empty = document.getElementById("trendEmpty");
+
+        const hasData = data.some((d) => d.checkedCount > 0);
+        if (!hasData) {
+          svg.innerHTML = "";
+          labelsWrap.innerHTML = "";
+          empty.classList.remove("hidden");
+          return;
+        }
+        empty.classList.add("hidden");
+
+        const w = 300,
+          h = 140,
+          padX = 22,
+          padY = 18;
+        const n = data.length;
+        const stepX = n > 1 ? (w - padX * 2) / (n - 1) : 0;
+        const yFor = (v) =>
+          h - padY - (Math.max(0, Math.min(100, v)) / 100) * (h - padY * 2);
+
+        const points = data.map((d, i) => [
+          padX + i * stepX,
+          yFor(d.compliance),
+        ]);
+        const linePath = points
+          .map(
+            (p, i) =>
+              (i === 0 ? "M" : "L") + p[0].toFixed(1) + " " + p[1].toFixed(1),
+          )
+          .join(" ");
+        const areaPath =
+          linePath +
+          ` L${points[points.length - 1][0].toFixed(1)} ${(h - padY).toFixed(1)}` +
+          ` L${points[0][0].toFixed(1)} ${(h - padY).toFixed(1)} Z`;
+
+        let gridLines = "";
+        [0, 25, 50, 75, 100].forEach((v) => {
+          const y = yFor(v);
+          gridLines += `<line x1="${padX}" y1="${y}" x2="${w - padX}" y2="${y}" stroke="#e5e0d2" stroke-width="1"/>`;
+        });
+
+        const dots = points
+          .map(
+            (p, i) => `
+    <circle cx="${p[0]}" cy="${p[1]}" r="4" fill="var(--orange)" stroke="var(--ink)" stroke-width="1.5"/>
+    <text x="${p[0]}" y="${Math.max(10, p[1] - 10)}" font-size="10" font-weight="700" fill="var(--ink)" text-anchor="middle">${data[i].compliance}%</text>
+  `,
+          )
+          .join("");
+
+        svg.innerHTML = `
+    ${gridLines}
+    <path d="${areaPath}" fill="var(--orange)" opacity="0.12"/>
+    <path d="${linePath}" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}
+  `;
+
+        labelsWrap.innerHTML = data
+          .map((d) => `<span>${d.weekLabel}</span>`)
+          .join("");
+      }
+
+      function renderZoneTable() {
+        if (!lastDashboard) return;
+        const filterZona = document.getElementById("quickFilter").value;
+        let rows = lastDashboard.zoneTable || [];
+        if (filterZona)
+          rows = rows.filter((r) => String(r.zona) === filterZona);
+
+        const tbody = document.getElementById("zoneTableBody");
+        const empty = document.getElementById("zoneTableEmpty");
+        if (!rows.length) {
+          tbody.innerHTML = "";
+          empty.classList.remove("hidden");
+          return;
+        }
+        empty.classList.add("hidden");
+        tbody.innerHTML = rows
+          .map(
+            (r) => `
+    <tr class="border-t border-neutral-200">
+      <td class="py-2 px-3 font-bold">ZONA ${r.zona}</td>
+      <td class="py-2 px-3 text-center text-green-700 font-bold">${r.ok}</td>
+      <td class="py-2 px-3 text-center text-red-700 font-bold">${r.nok}</td>
+      <td class="py-2 px-3 text-center font-bold">${r.compliance}%</td>
+    </tr>
+  `,
+          )
+          .join("");
+      }
+
+      /* ================================================================
+   CHECKLIST - Lokasi & Rak
+================================================================= */
+      function currentLineRacks() {
+        const line = document
+          .getElementById("lineInput")
+          .value.trim()
+          .toUpperCase();
+        if (!line) return [];
+        return state.masterZona
+          .filter((r) => String(r.Line).toUpperCase() === line)
+          .map((r) => Number(r.Rak))
+          .filter((v, i, arr) => arr.indexOf(v) === i)
+          .sort((a, b) => a - b);
+      }
+
+      function onLineChange() {
+        const line = document
+          .getElementById("lineInput")
+          .value.trim()
+          .toUpperCase();
+        const match = state.masterZona.find(
+          (r) => String(r.Line).toUpperCase() === line,
+        );
+        document.getElementById("zonaAutoText").textContent = match
+          ? `ZONA ${match.Zona}`
+          : "—";
+
+        state.rakStatus = {};
+        state.slides = [];
+        state.activeRak = null;
+        renderRakGrid();
+        renderInputTemuanPanel();
+      }
+
+      function renderRakGrid() {
+        const racks = currentLineRacks();
+        const grid = document.getElementById("rakGrid");
+        const empty = document.getElementById("rakGridEmpty");
+        if (!racks.length) {
+          grid.innerHTML = "";
+          empty.classList.remove("hidden");
+          return;
+        }
+        empty.classList.add("hidden");
+
+        grid.innerHTML = racks
+          .map((r) => {
+            const status = state.rakStatus[r]; // undefined | 'aman' | 'bermasalah'
+            const bad = status === "bermasalah";
+            const good = status === "aman";
+            const bg = bad
+              ? "var(--red-bg)"
+              : good
+                ? "var(--green-bg)"
+                : "#ffffff";
+            const color = bad ? "#7a2015" : good ? "#1f5c2c" : "#151310";
+            const borderStyle = bad
+              ? "border-style:dashed;border-color:var(--red);"
+              : "";
+            const badge = bad
+              ? `<span class="badge" style="background:var(--red)">!</span>`
+              : good
+                ? `<span class="badge" style="background:var(--green)">✓</span>`
+                : "";
+            return `<button type="button" data-rak="${r}"
+      class="rak-btn hardline rounded-xl py-4 text-sm font-bold flex items-center justify-center"
+      style="background:${bg}; color:${color}; ${borderStyle}">
+      Rak ${r} ${badge}
+    </button>`;
+          })
+          .join("");
+
+        grid
+          .querySelectorAll(".rak-btn")
+          .forEach((btn) => bindHoldToTrigger(btn));
+      }
+
+      /* Hold 1 detik = bermasalah. Tap biasa = toggle aman/putih, atau reset dari bermasalah -> putih */
+      function bindHoldToTrigger(btn) {
+        let timer = null;
+        let longPressFired = false;
+        const rak = Number(btn.dataset.rak);
+
+        const start = () => {
+          longPressFired = false;
+          btn.classList.add("holding");
+          timer = setTimeout(() => {
+            longPressFired = true;
+            btn.classList.remove("holding");
+            setRakStatus(rak, "bermasalah");
+          }, 800);
+        };
+        const cancel = () => {
+          clearTimeout(timer);
+          btn.classList.remove("holding");
+        };
+        const end = () => {
+          clearTimeout(timer);
+          btn.classList.remove("holding");
+          if (!longPressFired) {
+            const cur = state.rakStatus[rak];
+            setRakStatus(rak, cur ? undefined : "aman"); // aman<->putih, atau bermasalah->putih
+          }
+        };
+
+        btn.addEventListener("pointerdown", start);
+        btn.addEventListener("pointerup", end);
+        btn.addEventListener("pointerleave", cancel);
+        btn.addEventListener("pointercancel", cancel);
+        btn.addEventListener("contextmenu", (e) => e.preventDefault());
+      }
+
+      function setRakStatus(rak, status) {
+        if (status) state.rakStatus[rak] = status;
+        else delete state.rakStatus[rak];
+
+        if (status !== "bermasalah") {
+          // rak tidak lagi bermasalah -> buang slide terkait
+          state.slides = state.slides.filter((s) => s.rak !== rak);
+          if (state.activeRak === rak) state.activeRak = null;
+        } else if (!state.activeRak) {
+          state.activeRak = rak;
+        }
+        renderRakGrid();
+        renderInputTemuanPanel();
+      }
+
+      /* ================================================================
+   INPUT TEMUAN (chips rak, shelf multi-select, slide form)
+================================================================= */
+      function renderInputTemuanPanel() {
+        const badRaks = Object.keys(state.rakStatus)
+          .filter((r) => state.rakStatus[r] === "bermasalah")
+          .map(Number);
+        const panel = document.getElementById("inputTemuanPanel");
+        const postingBar = document.getElementById("postingBar");
+        const lineVal = document.getElementById("lineInput").value.trim().toUpperCase();
+        const hasLine = lineVal && state.masterZona.some(r => String(r.Line).toUpperCase() === lineVal);
+
+        if (!hasLine) {
+          postingBar.classList.add("hidden");
+        } else {
+          postingBar.classList.remove("hidden");
+        }
+
+        if (!badRaks.length) {
+          panel.classList.add("hidden");
+          updateSummaryBadge();
+          return;
+        }
+        panel.classList.remove("hidden");
+
+        if (!state.activeRak || !badRaks.includes(state.activeRak))
+          state.activeRak = badRaks[0];
+
+        document.getElementById("rakChips").innerHTML = badRaks
+          .map(
+            (r) => `
+    <button type="button" onclick="selectActiveRak(${r})"
+      class="hardline rounded-lg px-3 py-1.5 font-bold text-sm ${r === state.activeRak ? "" : "opacity-50"}"
+      style="background:var(--red-bg)">Rak ${r}</button>
+  `,
+          )
+          .join("");
+        document.getElementById("activeRakLabel").textContent = state.activeRak;
+
+        renderShelfSelector();
+        renderSlideNav();
+        updateSummaryBadge();
+      }
+
+      function selectActiveRak(r) {
+        state.activeRak = r;
+        renderInputTemuanPanel();
+      }
+
+      function renderShelfSelector() {
+        const wrap = document.getElementById("shelfSelector");
+        const rak = state.activeRak;
+        const line = document.getElementById("lineInput").value.trim().toUpperCase();
+        const shelves = state.masterZona
+          .filter(r => String(r.Line).toUpperCase() === line && Number(r.Rak) === rak)
+          .map(r => Number(r.Shelf))
+          .filter((v, i, arr) => arr.indexOf(v) === i)
+          .sort((a, b) => a - b);
+        const shelfList = shelves.length ? shelves : [1, 2, 3, 4, 5];
+        wrap.innerHTML = shelfList
+          .map((n) => {
+            const selected = state.slides.some(
+              (s) => s.rak === rak && s.shelf === n,
+            );
+            return `<button type="button" onclick="toggleShelf(${n})"
+      class="shelf-dot w-10 h-10 rounded-full hardline flex items-center justify-center font-bold text-sm"
+      style="background:${selected ? "var(--red-bg)" : "#fff"}; color:${selected ? "#7a2015" : "#151310"}">
+      ${n}
+    </button>`;
+          })
+          .join("");
+      }
+
+      function toggleShelf(n) {
+        const rak = state.activeRak;
+        const idx = state.slides.findIndex(
+          (s) => s.rak === rak && s.shelf === n,
+        );
+        if (idx >= 0) {
+          state.slides.splice(idx, 1);
+        } else {
+          state.slides.push({
+            rak,
+            shelf: n,
+            kategori: "",
+            subKategori: "",
+            catatan: "",
+            fotoDataUrl: null,
+            fotoName: "",
+          });
+          state.currentSlide = state.slides.length - 1;
+        }
+        if (state.currentSlide >= state.slides.length)
+          state.currentSlide = Math.max(0, state.slides.length - 1);
+        renderShelfSelector();
+        renderSlideNav();
+        updateSummaryBadge();
+      }
+
+      function renderSlideNav() {
+        const area = document.getElementById("slideArea");
+        if (!state.slides.length) {
+          area.classList.add("hidden");
+          return;
+        }
+        area.classList.remove("hidden");
+
+        const s = state.slides[state.currentSlide];
+        document.getElementById("slideRakShelfLabel").textContent =
+          `Rak ${s.rak} · Shelf ${s.shelf}`;
+        document.getElementById("slideCounter").textContent =
+          `Slide ${state.currentSlide + 1}/${state.slides.length}`;
+
+        const katSel = document.getElementById("kategoriSelect");
+        katSel.value = s.kategori || "";
+        populateSubKategori(s.kategori, s.subKategori);
+        document.getElementById("catatanInput").value = s.catatan || "";
+        if (s.fotoName) {
+          document.getElementById("photoBtnLabel").classList.add("hidden");
+          document
+            .getElementById("photoPreviewWrap")
+            .classList.remove("hidden");
+          document.getElementById("photoFileName").textContent =
+            "📎 " + s.fotoName;
+        } else {
+          document.getElementById("photoBtnLabel").classList.remove("hidden");
+          document.getElementById("photoPreviewWrap").classList.add("hidden");
+          document.getElementById("photoFileName").textContent = "";
+        }
+      }
+
+      function goSlide(delta) {
+        if (!state.slides.length) return;
+        state.currentSlide =
+          (state.currentSlide + delta + state.slides.length) %
+          state.slides.length;
+        renderSlideNav();
+      }
+
+      function populateSubKategori(selectedKategori, selectedSub) {
+        const subSel = document.getElementById("subKategoriSelect");
+        if (!selectedKategori) {
+          subSel.innerHTML = '<option value="">Pilih keterangan</option>';
+          return;
+        }
+        const subs = state.masterKategori
+          .filter((r) => r.Kategori === selectedKategori)
+          .map((r) => r.SubKategori);
+        subSel.innerHTML =
+          '<option value="">Pilih keterangan</option>' +
+          subs
+            .map(
+              (s) =>
+                `<option value="${s}" ${s === selectedSub ? "selected" : ""}>${s}</option>`,
+            )
+            .join("");
+      }
+
+      function onKategoriChange() {
+        const s = state.slides[state.currentSlide];
+        if (!s) return;
+        s.kategori = document.getElementById("kategoriSelect").value;
+        s.subKategori = "";
+        populateSubKategori(s.kategori, "");
+      }
+
+      function onSlideFieldChange() {
+        const s = state.slides[state.currentSlide];
+        if (!s) return;
+        s.subKategori = document.getElementById("subKategoriSelect").value;
+        s.catatan = document.getElementById("catatanInput").value;
+      }
+
+      function onPhotoSelected() {
+        const input = document.getElementById("photoInput");
+        const file = input.files[0];
+        const s = state.slides[state.currentSlide];
+        if (!file || !s) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          s.fotoDataUrl = reader.result;
+          s.fotoName = file.name;
+          renderSlideNav();
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function removePhoto() {
+        const s = state.slides[state.currentSlide];
+        if (!s) return;
+        s.fotoDataUrl = null;
+        s.fotoName = "";
+        document.getElementById("photoInput").value = "";
+        renderSlideNav();
+      }
+
+      function updateSummaryBadge() {
+        const totalRak = Object.keys(state.rakStatus).length;
+        const badRakCount = Object.values(state.rakStatus).filter(
+          (s) => s === "bermasalah",
+        ).length;
+        const goodRakCount = totalRak - badRakCount;
+        const badge = document.getElementById("summaryBadge");
+        if (totalRak === 0) {
+          badge.textContent = state.language === "en"
+            ? "No racks checked yet"
+            : "Belum ada rak diperiksa";
+          badge.style.background = "var(--gray-bg)";
+        } else if (badRakCount === 0) {
+          badge.textContent = state.language === "en"
+            ? `${goodRakCount} Racks OK - All Clear`
+            : `${goodRakCount} Rak Aman - Semua OK`;
+          badge.style.background = "var(--green-bg)";
+        } else {
+          badge.textContent = `${badRakCount} Rak ${state.slides.length} Shelf Bermasalah`;
+          badge.style.background = "var(--red-bg)";
+        }
+      }
+
+      /* ================================================================
+   POSTING
+================================================================= */
+      async function postTemuan() {
+        const line = document
+          .getElementById("lineInput")
+          .value.trim()
+          .toUpperCase();
+        const zonaMatch = state.masterZona.find(
+          (r) => String(r.Line).toUpperCase() === line,
+        );
+
+        if (!line || !zonaMatch)
+          return toast(t("pilihLineValid"), true);
+
+        const incomplete = state.slides.find(
+          (s) => !s.kategori || !s.subKategori,
+        );
+        if (state.slides.length && incomplete) {
+          state.currentSlide = state.slides.indexOf(incomplete);
+          renderSlideNav();
+          return toast(
+            t("lengkapiKategori").replace("X", incomplete.rak).replace("Y", incomplete.shelf),
+            true,
+          );
+        }
+
+        showLoading(state.language === "en" ? "Saving inspection..." : "Menyimpan pemeriksaan...");
+
+        const racksPayload = Object.entries(state.rakStatus).map(
+          ([rak, status]) => ({
+            rak: Number(rak),
+            status: status === "aman" ? "OK" : "NOK",
+          }),
+        );
+        const temuanPayload = state.slides.map((s) => ({
+          zona: zonaMatch.Zona,
+          line,
+          rak: s.rak,
+          shelf: s.shelf,
+          kategori: s.kategori,
+          subKategori: s.subKategori,
+          catatan: s.catatan,
+          fotoBase64: s.fotoDataUrl,
+          fotoName: s.fotoName,
+        }));
+
+        try {
+          if (backendReady) {
+            await apiPost({
+              action: "submitInspection",
+              zona: zonaMatch.Zona,
+              line,
+              petugas: state.user?.name || state.user?.email || "User",
+              racks: racksPayload,
+              temuanItems: temuanPayload,
+            });
+          } else {
+            DEMO_TEMUAN.unshift(
+              ...temuanPayload.map((t) => ({
+                Timestamp: new Date().toISOString(),
+                Zona: t.zona,
+                Line: t.line,
+                Rak: t.rak,
+                Shelf: t.shelf,
+                Kategori: t.kategori,
+                SubKategori: t.subKategori,
+                Catatan: t.catatan,
+                FotoURL: "",
+                Petugas: state.user?.name || "User",
+              })),
+            );
+          }
+
+          hideLoading();
+
+          const totalRak = racksPayload.length;
+          const totalNok = racksPayload.filter(r => r.status === "NOK").length;
+          const totalOk = totalRak - totalNok;
+          const summaryMsg = state.language === "en"
+            ? `${totalOk} OK, ${totalNok} NOK — Line ${line}`
+            : `${totalOk} Aman, ${totalNok} Bermasalah — Line ${line}`;
+          document.getElementById("successMessage").textContent = summaryMsg;
+          document.getElementById("successModal").classList.add("show");
+
+        } catch (err) {
+          hideLoading();
+          toast(t("gagalSimpan") + err.message, true);
+          return;
+        }
+
+        state.rakStatus = {};
+        state.slides = [];
+        state.activeRak = null;
+        renderRakGrid();
+        renderInputTemuanPanel();
+        loadDashboard();
+        loadDetailTemuan();
+      }
+
+      function handlePostClick() {
+        const line = document.getElementById("lineInput").value.trim().toUpperCase();
+        if (!line) return toast(t("pilihLineValid"), true);
+
+        const totalRak = Object.keys(state.rakStatus).length;
+        const badRak = Object.values(state.rakStatus).filter(s => s === "bermasalah").length;
+        const goodRak = totalRak - badRak;
+
+        let msg;
+        if (totalRak === 0) {
+          msg = state.language === "en"
+            ? "No racks checked. Submit as all OK?"
+            : "Belum ada rak yang diperiksa. Kirim sebagai semua OK?";
+        } else {
+          msg = state.language === "en"
+            ? `${goodRak} OK, ${badRak} NOK on Line ${line}. Submit inspection?`
+            : `${goodRak} Aman, ${badRak} Bermasalah di Line ${line}. Posting pemeriksaan ini?`;
+        }
+
+        showConfirm({
+          title: state.language === "en" ? "Submit Inspection" : "Konfirmasi Posting",
+          message: msg,
+          type: "warning",
+          confirmText: t("posting"),
+        }).then((yes) => {
+          if (yes) postTemuan();
+        });
+      }
+
+      function closeSuccess() {
+        document.getElementById("successModal").classList.remove("show");
+      }
+
+      /* ================================================================
+   DETAIL TEMUAN
+================================================================= */
+      function resetFilterTanggal() {
+        document.getElementById("filterFrom").value = "";
+        document.getElementById("filterTo").value = "";
+        loadDetailTemuan();
+      }
+
+      state.detailViewMode = "all";
+
+      function toggleDetailView(mode) {
+        state.detailViewMode = mode;
+        const allBtn = document.getElementById("viewAllBtn");
+        const latestBtn = document.getElementById("viewLatestBtn");
+        allBtn.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all " + (mode === "all" ? "active-toggle" : "inactive-toggle");
+        latestBtn.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all " + (mode === "latest" ? "active-toggle" : "inactive-toggle");
+        loadDetailTemuan();
+      }
+
+      async function loadDetailTemuan() {
+        const from = document.getElementById("filterFrom").value;
+        const to = document.getElementById("filterTo").value;
+        const useLatest = state.detailViewMode === "latest";
+        let rows;
+        try {
+          rows = backendReady ? await apiGet(useLatest ? "temuanLatest" : "temuan", { from, to }) : null;
+        } catch (e) {
+          console.warn(e.message);
+        }
+        if (!rows) {
+          const all = DEMO_TEMUAN.filter((t) => {
+            const d = new Date(t.Timestamp);
+            if (from && d < new Date(from)) return false;
+            if (to) {
+              const tEnd = new Date(to);
+              tEnd.setHours(23, 59, 59);
+              if (d > tEnd) return false;
+            }
+            return true;
+          });
+          if (useLatest) {
+            const latest = {};
+            all.forEach(r => {
+              const key = (r.Line || '') + '|' + (r.Rak || '') + '|' + (r.Shelf || '');
+              if (!latest[key] || new Date(r.Timestamp) > new Date(latest[key].Timestamp)) {
+                latest[key] = r;
+              }
+            });
+            rows = Object.values(latest);
+          } else {
+            rows = all;
+          }
+        }
+        state._lastTemuanRows = rows;
+
+        const list = document.getElementById("detailList");
+        const empty = document.getElementById("detailEmpty");
+        if (!rows.length) {
+          list.innerHTML = "";
+          empty.classList.remove("hidden");
+          return;
+        }
+        empty.classList.add("hidden");
+
+        list.innerHTML = rows
+          .map((t) => {
+            const date = t.Timestamp ? new Date(t.Timestamp) : new Date();
+            const timeStr = date.toLocaleTimeString("id-ID", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            const dateStr = date.toLocaleDateString("id-ID", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
+            const img = t.FotoURL
+              ? `<img src="${t.FotoURL}" class="w-16 h-16 rounded-lg object-cover hardline shrink-0" />`
+              : `<div class="w-16 h-16 rounded-lg hardline shrink-0 flex items-center justify-center text-2xl" style="background:var(--red-bg)">📦</div>`;
+            return `
+      <div class="hardline-thick rounded-2xl p-3 flex gap-3 bg-white/50">
+        ${img}
+        <div class="min-w-0">
+          <p class="font-extrabold text-[15px] truncate">${escapeHtml(t.SubKategori || t.Kategori || "Temuan")}</p>
+          <p class="text-xs text-neutral-600 font-semibold truncate">ZONA ${escapeHtml(t.Zona || "")} | Line ${escapeHtml(t.Line || "")} | Rak ${escapeHtml(t.Rak || "")} Shelf ${escapeHtml(t.Shelf || "")}</p>
+          <p class="text-xs text-neutral-500 truncate">${escapeHtml(t.Catatan || "")}</p>
+          <p class="text-[11px] text-neutral-400 mt-1">Rep: ${escapeHtml(t.Petugas || "User")} | ${timeStr} | ${dateStr}</p>
+        </div>
+      </div>
+    `;
+          })
+          .join("");
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+    </script>
+  </body>
+</html>
