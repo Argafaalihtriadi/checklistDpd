@@ -77,6 +77,7 @@
         -webkit-user-select: none;
         user-select: none;
         touch-action: manipulation;
+        cursor: pointer;
         position: relative;
       }
       .rak-btn .badge {
@@ -92,10 +93,6 @@
         font-size: 11px;
         color: #fff;
         border: 2px solid var(--ink);
-      }
-      .rak-btn.holding {
-        transform: scale(0.94);
-        filter: brightness(0.9);
       }
       .shelf-dot {
         transition: all 0.12s ease;
@@ -1082,7 +1079,7 @@
             Pilih line dulu untuk memuat daftar rak.
           </p>
           <p class="text-[11px] text-neutral-500 mt-3">
-            Ketuk untuk tandai <b>Aman</b> ✓ &nbsp;•&nbsp; Tahan 1 detik untuk
+            Ketuk untuk tandai <b>Aman</b> ✓ &nbsp;•&nbsp; tap 2 kali untuk
             tandai <b>Bermasalah</b> ⚠️ &nbsp;•&nbsp; Ketuk lagi pada rak
             bermasalah untuk membatalkan
           </p>
@@ -1578,7 +1575,8 @@
           masukModeTesting: "Masuk mode testing...",
           masukTesting: "Masuk tanpa login (mode testing)",
           pilihLineValid: "Pilih line pemeriksaan yang valid dulu",
-          periksaMinimal1: "Periksa minimal 1 rak dulu (tap = aman, tahan = bermasalah)",
+          periksaMinimal1: "Periksa minimal 1 rak dulu (tap = aman, double tap = bermasalah)",
+          belumSemuaDiperiksa: "Masih ada {n} rak belum diperiksa. Periksa semua {t} rak di Line {line} dulu",
           lengkapiKategori: "Lengkapi kategori & sub kategori untuk Rak X Shelf Y",
           simpanBerhasil: "Pemeriksaan berhasil disimpan ✅",
           gagalSimpan: "Gagal simpan ke server: ",
@@ -1646,7 +1644,8 @@
           masukModeTesting: "Entering testing mode...",
           masukTesting: "Logged in without login (testing mode)",
           pilihLineValid: "Select a valid inspection line first",
-          periksaMinimal1: "Check at least 1 rack first (tap = OK, hold = problem)",
+          periksaMinimal1: "Check at least 1 rack first (tap = OK, double tap = problem)",
+          belumSemuaDiperiksa: "Still {n} rack(s) unchecked. Check all {t} racks on Line {line} first",
           lengkapiKategori: "Complete category & sub category for Rack X Shelf Y",
           simpanBerhasil: "Inspection saved successfully ✅",
           gagalSimpan: "Failed to save to server: ",
@@ -2665,38 +2664,32 @@
           .forEach((btn) => bindHoldToTrigger(btn));
       }
 
-      /* Hold 1 detik = bermasalah. Tap biasa = toggle aman/putih, atau reset dari bermasalah -> putih */
+      /* Single tap = toggle aman/putih, Double tap = bermasalah (no delay) */
+      let _lastTapRak = null;
+      let _lastTapTime = 0;
       function bindHoldToTrigger(btn) {
-        let timer = null;
-        let longPressFired = false;
         const rak = Number(btn.dataset.rak);
 
-        const start = () => {
-          longPressFired = false;
-          btn.classList.add("holding");
-          timer = setTimeout(() => {
-            longPressFired = true;
-            btn.classList.remove("holding");
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const now = Date.now();
+          const isDouble = _lastTapRak === rak && (now - _lastTapTime) < 300;
+          if (isDouble) {
+            _lastTapRak = null;
+            _lastTapTime = 0;
             setRakStatus(rak, "bermasalah");
-          }, 800);
-        };
-        const cancel = () => {
-          clearTimeout(timer);
-          btn.classList.remove("holding");
-        };
-        const end = () => {
-          clearTimeout(timer);
-          btn.classList.remove("holding");
-          if (!longPressFired) {
-            const cur = state.rakStatus[rak];
-            setRakStatus(rak, cur ? undefined : "aman"); // aman<->putih, atau bermasalah->putih
+            return;
           }
-        };
-
-        btn.addEventListener("pointerdown", start);
-        btn.addEventListener("pointerup", end);
-        btn.addEventListener("pointerleave", cancel);
-        btn.addEventListener("pointercancel", cancel);
+          _lastTapRak = rak;
+          _lastTapTime = now;
+          const cur = state.rakStatus[rak];
+          setRakStatus(rak, cur ? undefined : "aman");
+          setTimeout(() => {
+            if (_lastTapRak === rak && Date.now() - _lastTapTime >= 300) {
+              _lastTapRak = null;
+            }
+          }, 350);
+        });
         btn.addEventListener("contextmenu", (e) => e.preventDefault());
       }
 
@@ -2961,6 +2954,15 @@
           );
         }
 
+        const expected = currentLineRacks().length;
+        const totalMarked = Object.keys(state.rakStatus).length;
+        if (totalMarked === 0) return toast(t("periksaMinimal1"), true);
+        if (expected > 0 && totalMarked < expected) {
+          const sisa = expected - totalMarked;
+          const msg = t("belumSemuaDiperiksa").replace("{n}", sisa).replace("{t}", expected).replace("{line}", line);
+          return toast(msg, true);
+        }
+
         showLoading(state.language === "en" ? "Saving inspection..." : "Menyimpan pemeriksaan...");
 
         const racksPayload = Object.entries(state.rakStatus).map(
@@ -3038,20 +3040,21 @@
         const line = document.getElementById("lineInput").value.trim().toUpperCase();
         if (!line) return toast(t("pilihLineValid"), true);
 
+        const expected = currentLineRacks().length;
         const totalRak = Object.keys(state.rakStatus).length;
+        if (totalRak === 0) return toast(t("periksaMinimal1"), true);
+        if (expected > 0 && totalRak < expected) {
+          const sisa = expected - totalRak;
+          const msg = t("belumSemuaDiperiksa").replace("{n}", sisa).replace("{t}", expected).replace("{line}", line);
+          return toast(msg, true);
+        }
+
         const badRak = Object.values(state.rakStatus).filter(s => s === "bermasalah").length;
         const goodRak = totalRak - badRak;
 
-        let msg;
-        if (totalRak === 0) {
-          msg = state.language === "en"
-            ? "No racks checked. Submit as all OK?"
-            : "Belum ada rak yang diperiksa. Kirim sebagai semua OK?";
-        } else {
-          msg = state.language === "en"
-            ? `${goodRak} OK, ${badRak} NOK on Line ${line}. Submit inspection?`
-            : `${goodRak} Aman, ${badRak} Bermasalah di Line ${line}. Posting pemeriksaan ini?`;
-        }
+        const msg = state.language === "en"
+          ? `${goodRak} OK, ${badRak} NOK on Line ${line}. Submit inspection?`
+          : `${goodRak} Aman, ${badRak} Bermasalah di Line ${line}. Posting pemeriksaan ini?`;
 
         showConfirm({
           title: state.language === "en" ? "Submit Inspection" : "Konfirmasi Posting",
