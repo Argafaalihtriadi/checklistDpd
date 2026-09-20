@@ -118,7 +118,7 @@ function submitInspection(body) {
   const chSheet = sheet(SHEET_NAMES.CHECKLIST);
   const now = new Date();
   (body.racks || []).forEach(r => {
-    chSheet.appendRow([now, body.zona, body.line, r.rak, r.status, body.petugas || '']);
+    chSheet.appendRow([now, body.zona, body.line, r.rak, r.shelf, r.status, body.petugas || '']);
   });
 
   const tSheet = sheet(SHEET_NAMES.TEMUAN);

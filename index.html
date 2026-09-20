@@ -1411,7 +1411,7 @@
    Isi dua nilai ini sesuai SETUP.md
 ================================================================= */
       const APPS_SCRIPT_URL =
-        "https://script.google.com/macros/s/AKfycby0Y6_1kxd5gIYjEc-u7x5EvUy7auJMzlfUfeDfTcvsnrqTcfVOJ2VDZYb7fCJOB7Gz/exec";
+        "https://script.google.com/macros/s/AKfycbxzKpEIyaUzqZ2A6VtC2L2IIkacMl5OAY3LgYb0vT0s0QJdjWgEf-0Qk_5Tax6U1LNo/exec";
       const GOOGLE_CLIENT_ID =
         "15966134219-dg7pm2p2lvdficra7ithu0v782tnp3d3.apps.googleusercontent.com"; // kosongkan kalau belum setup Google OAuth
 
@@ -1790,7 +1790,7 @@
           doc.text(`Periode: ${range}  |  Dicetak: ${new Date().toLocaleString("id-ID")}`, 14, 22);
           doc.autoTable({
             startY: 28,
-            head: [[t("tglLaporan"), t("zon"), t("lin"), t("rak"), "Shelf", t("kategori"), t("subKategori"), t("catatan"), t("petugas")]],
+            head: [[t("tglLaporan"), t("Zona"), t("Line"), t("Rak"), "Shelf", t("kategori"), t("subKategori"), t("catatan"), t("petugas")]],
             body: rows.map(r => {
               const d = r.Timestamp ? new Date(r.Timestamp) : new Date();
               let h = d.getHours();
@@ -2965,12 +2965,31 @@
 
         showLoading(state.language === "en" ? "Saving inspection..." : "Menyimpan pemeriksaan...");
 
-        const racksPayload = Object.entries(state.rakStatus).map(
-          ([rak, status]) => ({
-            rak: Number(rak),
-            status: status === "aman" ? "OK" : "NOK",
-          }),
-        );
+        const racksPayload = [];
+        Object.entries(state.rakStatus).forEach(([rakStr, status]) => {
+          const rak = Number(rakStr);
+          const shelves = state.masterZona
+            .filter(r => String(r.Line).toUpperCase() === line && Number(r.Rak) === rak)
+            .map(r => Number(r.Shelf))
+            .filter((v, i, arr) => arr.indexOf(v) === i)
+            .sort((a, b) => a - b);
+          const shelfList = shelves.length ? shelves : [1, 2, 3, 4, 5];
+
+          if (status === "aman") {
+            shelfList.forEach(sNum => {
+              racksPayload.push({ rak, shelf: sNum, status: "OK" });
+            });
+          } else {
+            const nokShelves = state.slides.filter(s => s.rak === rak).map(s => s.shelf);
+            shelfList.forEach(sNum => {
+              racksPayload.push({
+                rak,
+                shelf: sNum,
+                status: nokShelves.includes(sNum) ? "NOK" : "OK"
+              });
+            });
+          }
+        });
         const temuanPayload = state.slides.map((s) => ({
           zona: zonaMatch.Zona,
           line,
@@ -3012,8 +3031,8 @@
 
           hideLoading();
 
-          const totalRak = racksPayload.length;
-          const totalNok = racksPayload.filter(r => r.status === "NOK").length;
+          const totalRak = Object.keys(state.rakStatus).length;
+          const totalNok = Object.values(state.rakStatus).filter(s => s === "bermasalah").length;
           const totalOk = totalRak - totalNok;
           const summaryMsg = state.language === "en"
             ? `${totalOk} OK, ${totalNok} NOK — Line ${line}`
