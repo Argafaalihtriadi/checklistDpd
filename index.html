@@ -1411,7 +1411,7 @@
    Isi dua nilai ini sesuai SETUP.md
 ================================================================= */
       const APPS_SCRIPT_URL =
-        "https://script.google.com/macros/s/AKfycbxzKpEIyaUzqZ2A6VtC2L2IIkacMl5OAY3LgYb0vT0s0QJdjWgEf-0Qk_5Tax6U1LNo/exec";
+        "https://script.google.com/macros/s/AKfycbyQdGTxdPZVJcY4r6cxJUBrL5-oAKxn0cr77z0Eo6LVRzLclh5uXStvjFkmE8IAyH3C/exec";
       const GOOGLE_CLIENT_ID =
         "15966134219-dg7pm2p2lvdficra7ithu0v782tnp3d3.apps.googleusercontent.com"; // kosongkan kalau belum setup Google OAuth
 
@@ -1790,7 +1790,7 @@
           doc.text(`Periode: ${range}  |  Dicetak: ${new Date().toLocaleString("id-ID")}`, 14, 22);
           doc.autoTable({
             startY: 28,
-            head: [[t("tglLaporan"), t("Zona"), t("Line"), t("Rak"), "Shelf", t("kategori"), t("subKategori"), t("catatan"), t("petugas")]],
+            head: [["Docno", t("tglLaporan"), t("Zona"), t("Line"), t("Rak"), "Shelf", t("kategori"), t("subKategori"), t("catatan"), t("petugas")]],
             body: rows.map(r => {
               const d = r.Timestamp ? new Date(r.Timestamp) : new Date();
               let h = d.getHours();
@@ -1798,6 +1798,7 @@
               h = h % 12; if (h === 0) h = 12;
               const ts = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")},${String(h).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")} ${ampm}`;
               return [
+                r.Docno || "-",
                 ts,
                 r.Zona, r.Line, r.Rak, r.Shelf, r.Kategori, r.SubKategori, r.Catatan || "", r.Petugas || ""
               ];
@@ -1836,10 +1837,11 @@
           return `${y}-${mo}-${dd},${String(h).padStart(2,"0")}:${mm} ${ampm}`;
         }
 
-        const headers = ["Timestamp","Zona","Line","Rak","Shelf","Kategori","SubKategori","Catatan","Petugas","Status"];
+        const headers = ["Docno","Timestamp","Zona","Line","Rak","Shelf","Kategori","SubKategori","Catatan","Petugas","Status"];
         const csvRows = [headers.join(",")];
         rows.forEach(r => {
           csvRows.push([
+            `"${r.Docno || "-"}"`,
             `"${fmtTimestamp(r.Timestamp)}"`,
             r.Zona, r.Line, r.Rak, r.Shelf,
             `"${(r.Kategori||"").replace(/"/g,'""')}"`,
@@ -2341,6 +2343,12 @@
         document.getElementById("page-login").classList.remove("active");
         document.getElementById("appHeader").classList.remove("hidden");
         document.getElementById("bottomNav").classList.remove("hidden");
+        
+        // Set default filter date to today
+        const today = new Date().toISOString().slice(0, 10);
+        document.getElementById("filterFrom").value = today;
+        document.getElementById("filterTo").value = today;
+        
         renderUserAvatar();
         loadMasterData().then(() => {
           loadDashboard();
@@ -2407,13 +2415,6 @@
           '<option value="">Pilih kategori</option>' +
           cats.map((c) => `<option value="${c}">${c}</option>`).join("");
 
-        // quick filter zona
-        const zonas = [
-          ...new Set(state.masterZona.map((r) => String(r.Zona))),
-        ].sort((a, b) => a - b);
-        document.getElementById("quickFilter").innerHTML =
-          '<option value="">Semua zona</option>' +
-          zonas.map((z) => `<option value="${z}">ZONA ${z}</option>`).join("");
       }
 
       /* ================================================================
@@ -2435,13 +2436,20 @@
             nokCount: 0,
             checkedCount: 0,
             pendingCount: state.masterZona.length,
-            totalRakMaster: state.masterZona.length,
+            totalShelfMaster: state.masterZona.length,
             bestZone: null,
             worstZone: null,
             zoneTable: [],
+            activeZonesToday: []
           };
         }
         lastDashboard = d;
+        
+        // quick filter zona (today only)
+        const activeZ = d.activeZonesToday || [];
+        document.getElementById("quickFilter").innerHTML =
+          `<option value="">${state.language === "en" ? "All zones" : "Semua zona"}</option>` +
+          activeZ.map((z) => `<option value="${z}">ZONA ${z}</option>`).join("");
 
         document.getElementById("compliancePct").textContent =
           d.compliance + "%";
@@ -2449,16 +2457,16 @@
           .getElementById("gaugeArc")
           .setAttribute("stroke-dasharray", d.compliance + " 100");
         document.getElementById("checkedSummary").textContent =
-          `${d.checkedCount} / ${d.totalRakMaster} ${t("rak").toLowerCase()} ${state.language === "en" ? "checked this week" : "sudah diperiksa minggu ini"}`;
+          `${d.checkedCount} / ${d.totalShelfMaster} SHELF ${state.language === "en" ? "checked this week" : "sudah diperiksa minggu ini"}`;
         document.getElementById("bestZone").textContent = d.bestZone
           ? `ZONA ${d.bestZone.zona} 🏆`
           : state.language === "en" ? "No data yet" : "Belum ada data";
         document.getElementById("worstZone").textContent = d.worstZone
           ? `ZONA ${d.worstZone.zona} ⚠️`
           : state.language === "en" ? "No data yet" : "Belum ada data";
-        document.getElementById("totalNok").textContent = d.nokCount + " RAK";
+        document.getElementById("totalNok").textContent = d.nokCount + " SHELF";
         document.getElementById("pendingReview").textContent =
-          d.pendingCount + " RAK";
+          d.pendingCount + " SHELF";
 
         renderZoneTable();
         loadTrend();
@@ -2886,11 +2894,31 @@
         const file = input.files[0];
         const s = state.slides[state.currentSlide];
         if (!file || !s) return;
+        
         const reader = new FileReader();
-        reader.onload = () => {
-          s.fotoDataUrl = reader.result;
-          s.fotoName = file.name;
-          renderSlideNav();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 1024;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            s.fotoDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            s.fotoName = file.name;
+            renderSlideNav();
+          };
+          img.src = e.target.result;
         };
         reader.readAsDataURL(file);
       }
@@ -3110,8 +3138,12 @@
       }
 
       async function loadDetailTemuan() {
-        const from = document.getElementById("filterFrom").value;
-        const to = document.getElementById("filterTo").value;
+        const fromRaw = document.getElementById("filterFrom").value;
+        const toRaw = document.getElementById("filterTo").value;
+        // Convert date-only values to full datetime strings to avoid timezone issues.
+        // "from" becomes start of day (00:00:00), "to" becomes end of day (23:59:59).
+        const from = fromRaw ? `${fromRaw}T00:00:00` : fromRaw;
+        const to   = toRaw   ? `${toRaw}T23:59:59`   : toRaw;
         const useLatest = state.detailViewMode === "latest";
         let rows;
         try {
