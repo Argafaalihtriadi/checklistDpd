@@ -284,54 +284,99 @@ function getOrCreateFolder(name) {
 
 /* ================== DETAIL TEMUAN (dengan filter tanggal & zona) ================== */
 
+// Helper: parse timestamp dari cell sheet (bisa Date object, string ISO, atau DD/MM/YYYY) ke epoch ms
+function parseRowTimestamp(val) {
+  if (!val) return 0;
+  if (val instanceof Date) return val.getTime();
+  const str = String(val).trim();
+  // Cek format DD/MM/YYYY HH:mm:ss atau DD/MM/YYYY
+  const mId = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+  if (mId) {
+    const dd = parseInt(mId[1], 10);
+    const mm = parseInt(mId[2], 10) - 1;
+    const yyyy = parseInt(mId[3], 10);
+    const h = mId[4] !== undefined ? parseInt(mId[4], 10) : 0;
+    const min = mId[5] !== undefined ? parseInt(mId[5], 10) : 0;
+    const sec = mId[6] !== undefined ? parseInt(mId[6], 10) : 0;
+    return Date.UTC(yyyy, mm, dd, h, min, sec) - 7 * 60 * 60 * 1000;
+  }
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+// Helper: parse parameter tanggal filter ke epoch ms (WIB, UTC+7)
+// Jika isEndOfDay = true dan hanya YYYY-MM-DD, otomatis diset ke 23:59:59.999 WIB
+function parseFilterDateWIB(str, isEndOfDay) {
+  if (!str) return null;
+  const s = String(str).trim();
+  
+  // Tangani format YYYY-MM-DD atau YYYY-MM-DDTHH:mm:ss
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (m) {
+    const yyyy = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10) - 1;
+    const dd = parseInt(m[3], 10);
+    let h, min, sec, ms;
+    if (m[4] !== undefined) {
+      h = parseInt(m[4], 10);
+      min = parseInt(m[5], 10);
+      sec = m[6] !== undefined ? parseInt(m[6], 10) : 0;
+      ms = isEndOfDay ? 999 : 0;
+    } else {
+      if (isEndOfDay) {
+        h = 23; min = 59; sec = 59; ms = 999;
+      } else {
+        h = 0; min = 0; sec = 0; ms = 0;
+      }
+    }
+    // Konversi waktu WIB ke epoch ms (WIB = UTC+7)
+    return Date.UTC(yyyy, mm, dd, h, min, sec, ms) - 7 * 60 * 60 * 1000;
+  }
+
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    if (isEndOfDay && !s.includes("T") && !s.includes(" ")) {
+      return d.getTime() + 24 * 60 * 60 * 1000 - 1;
+    }
+    return d.getTime();
+  }
+  return null;
+}
+
 function getTemuanList(from, to, zonaFilter) {
   let rows = sheetToObjects(SHEET_NAMES.TEMUAN);
 
-  // Helper: parse a date string sent from frontend (local time WIB, UTC+7) into a Date.
-  // When the frontend sends "2026-09-22T00:00:00" without timezone info,
-  // Apps Script parses it as UTC, which is 7 hours ahead of WIB.
-  // We compensate by subtracting 7 hours from the parsed UTC date
-  // so the filter window matches the user's local (WIB) day.
-  function parseLocal(str) {
-    if (!str) return null;
-    const d = new Date(str);
-    // If string has no timezone offset info (no Z, no +/-), treat as WIB (UTC+7)
-    if (!/[Zz]|[+-]\d{2}:\d{2}/.test(str)) {
-      return new Date(d.getTime() - 7 * 60 * 60 * 1000);
-    }
-    return d;
-  }
-
   if (from) {
-    const f = parseLocal(from);
-    if (f) rows = rows.filter((r) => new Date(r.Timestamp) >= f);
+    const fTime = parseFilterDateWIB(from, false);
+    if (fTime !== null) rows = rows.filter((r) => parseRowTimestamp(r.Timestamp) >= fTime);
   }
   if (to) {
-    const t = parseLocal(to);
-    if (t) rows = rows.filter((r) => new Date(r.Timestamp) <= t);
+    const tTime = parseFilterDateWIB(to, true);
+    if (tTime !== null) rows = rows.filter((r) => parseRowTimestamp(r.Timestamp) <= tTime);
   }
   if (zonaFilter)
     rows = rows.filter((r) => String(r.Zona) === String(zonaFilter));
-  rows.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+  rows.sort((a, b) => parseRowTimestamp(b.Timestamp) - parseRowTimestamp(a.Timestamp));
   return rows;
 }
 
-/* ================== TEMUAN LATEST (dedup by Line+Rak+Shelf, latest wins) ================== */
+/* ================== TEMUAN LATEST (dedup by Zona+Line+Rak+Shelf, latest wins) ================== */
 
 function getTemuanLatest(from, to, zonaFilter) {
   const all = getTemuanList(from, to, zonaFilter);
   const latest = {};
   all.forEach((r) => {
-    const key = (r.Line || "") + "|" + (r.Rak || "") + "|" + (r.Shelf || "");
+    // Key harus mencakup Zona agar tidak bentrok antar-zona
+    const key = (r.Zona || "") + "|" + (r.Line || "") + "|" + (r.Rak || "") + "|" + (r.Shelf || "");
     if (
       !latest[key] ||
-      new Date(r.Timestamp) > new Date(latest[key].Timestamp)
+      parseRowTimestamp(r.Timestamp) > parseRowTimestamp(latest[key].Timestamp)
     ) {
       latest[key] = r;
     }
   });
   const result = Object.values(latest);
-  result.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+  result.sort((a, b) => parseRowTimestamp(b.Timestamp) - parseRowTimestamp(a.Timestamp));
   return result;
 }
 

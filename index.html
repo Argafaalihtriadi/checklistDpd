@@ -1411,7 +1411,7 @@
    Isi dua nilai ini sesuai SETUP.md
 ================================================================= */
       const APPS_SCRIPT_URL =
-        "https://script.google.com/macros/s/AKfycbwvNmj8LPAgT29o7SypLF6MvK6oHZ_xCrvxjIBnqbkI0-6SJL4TDBN4UtVAS84S9WNQ/exec";
+        "https://script.google.com/macros/s/AKfycbw351k8pBUFPaEV75lGG7r_w4RCXHhWjjyLkXGmvs51NReryEGe8Xx3S6tzuCkAtUcl/exec";
       const GOOGLE_CLIENT_ID =
         "15966134219-dg7pm2p2lvdficra7ithu0v782tnp3d3.apps.googleusercontent.com"; // kosongkan kalau belum setup Google OAuth
 
@@ -1862,10 +1862,19 @@
         showAlert({ title: "CSV", message: t("downloadBerhasil"), type: "success" });
       }
 
+      function getFilterDateParams() {
+        const fromEl = document.getElementById("filterFrom");
+        const toEl = document.getElementById("filterTo");
+        const fromRaw = fromEl ? fromEl.value.trim() : "";
+        const toRaw = toEl ? toEl.value.trim() : "";
+        const from = fromRaw ? `${fromRaw}T00:00:00` : "";
+        const to = toRaw ? `${toRaw}T23:59:59` : "";
+        return { fromRaw, toRaw, from, to };
+      }
+
       async function getCurrentTemuanRows() {
-        const from = document.getElementById("filterFrom").value;
-        const to = document.getElementById("filterTo").value;
-        if (state._lastTemuanRows && state._lastTemuanFilterFrom === from && state._lastTemuanFilterTo === to) {
+        const { fromRaw, toRaw, from, to } = getFilterDateParams();
+        if (state._lastTemuanRows && state._lastTemuanFilterFrom === fromRaw && state._lastTemuanFilterTo === toRaw) {
           return state._lastTemuanRows;
         }
         let rows;
@@ -1877,24 +1886,22 @@
         if (!rows) {
           rows = DEMO_TEMUAN.filter((t) => {
             const d = new Date(t.Timestamp);
-            if (from && d < new Date(from)) return false;
-            if (to) {
-              const tEnd = new Date(to);
-              tEnd.setHours(23, 59, 59);
+            if (fromRaw && d < new Date(fromRaw + "T00:00:00")) return false;
+            if (toRaw) {
+              const tEnd = new Date(toRaw + "T23:59:59");
               if (d > tEnd) return false;
             }
             return true;
           });
         }
         state._lastTemuanRows = rows;
-        state._lastTemuanFilterFrom = from;
-        state._lastTemuanFilterTo = to;
+        state._lastTemuanFilterFrom = fromRaw;
+        state._lastTemuanFilterTo = toRaw;
         return rows;
       }
 
       async function getCurrentTemuanLatestRows() {
-        const from = document.getElementById("filterFrom").value;
-        const to = document.getElementById("filterTo").value;
+        const { fromRaw, toRaw, from, to } = getFilterDateParams();
         let rows;
         try {
           rows = backendReady ? await apiGet("temuanLatest", { from, to }) : null;
@@ -1904,17 +1911,16 @@
         if (!rows) {
           const all = DEMO_TEMUAN.filter((t) => {
             const d = new Date(t.Timestamp);
-            if (from && d < new Date(from)) return false;
-            if (to) {
-              const tEnd = new Date(to);
-              tEnd.setHours(23, 59, 59);
+            if (fromRaw && d < new Date(fromRaw + "T00:00:00")) return false;
+            if (toRaw) {
+              const tEnd = new Date(toRaw + "T23:59:59");
               if (d > tEnd) return false;
             }
             return true;
           });
           const latest = {};
           all.forEach(r => {
-            const key = (r.Line || '') + '|' + (r.Rak || '') + '|' + (r.Shelf || '');
+            const key = (r.Zona || '') + '|' + (r.Line || '') + '|' + (r.Rak || '') + '|' + (r.Shelf || '');
             if (!latest[key] || new Date(r.Timestamp) > new Date(latest[key].Timestamp)) {
               latest[key] = r;
             }
@@ -1929,12 +1935,32 @@
 ================================================================ */
       let _reportBlobUrl = null;
       async function generateDailyReport() {
-        const rows = await getCurrentTemuanLatestRows();
-        if (!rows.length) { showAlert({ title: t("laporanHarian"), message: t("tidakAdaDataExport"), type: "info" }); return; }
-
         showLoading(state.language === "en" ? "Generating report..." : "Membuat laporan...");
-        const today = new Date();
-        const dateStr = today.toLocaleDateString(state.language === "en" ? "en-US" : "id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        const rows = await getCurrentTemuanLatestRows();
+        if (!rows || !rows.length) {
+          hideLoading();
+          showAlert({
+            title: t("laporanHarian"),
+            message: state.language === "en"
+              ? "No findings recorded for this date (shelves are OK or not inspected yet)."
+              : "Tidak ada data temuan untuk tanggal ini (rak dalam kondisi BAIK atau belum diperiksa).",
+            type: "info"
+          });
+          return;
+        }
+
+        const { fromRaw, toRaw } = getFilterDateParams();
+        const lang = state.language === "en" ? "en-US" : "id-ID";
+        let dateStr = "";
+        if (fromRaw && toRaw && fromRaw === toRaw) {
+          const parts = fromRaw.split("-");
+          const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          dateStr = d.toLocaleDateString(lang, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        } else if (fromRaw || toRaw) {
+          dateStr = `${fromRaw || "..."} s/d ${toRaw || "..."}`;
+        } else {
+          dateStr = new Date().toLocaleDateString(lang, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        }
 
         let tableRows = rows.map((r, i) => {
           const sub = (r.SubKategori || r.Kategori || "-");
@@ -1951,6 +1977,7 @@
         }).join("");
 
         const petugasList = state.user?.name || state.user?.email || "User";
+        const today = new Date();
 
         const target = document.getElementById("reportCanvasTarget");
         target.innerHTML = `
@@ -2003,9 +2030,11 @@
 
       async function downloadReportImage() {
         if (!_reportBlobUrl) return;
+        const { fromRaw } = getFilterDateParams();
+        const fileDate = fromRaw || new Date().toISOString().slice(0, 10);
         const a = document.createElement("a");
         a.href = _reportBlobUrl;
-        a.download = `Laporan_Harian_DPD_${new Date().toISOString().slice(0,10)}.png`;
+        a.download = `Laporan_Harian_DPD_${fileDate}.png`;
         a.click();
         showAlert({ title: "OK", message: t("downloadBerhasil"), type: "success" });
       }
@@ -2344,8 +2373,9 @@
         document.getElementById("appHeader").classList.remove("hidden");
         document.getElementById("bottomNav").classList.remove("hidden");
         
-        // Set default filter date to today
-        const today = new Date().toISOString().slice(0, 10);
+        // Set default filter date to today (waktu lokal)
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
         document.getElementById("filterFrom").value = today;
         document.getElementById("filterTo").value = today;
         
@@ -3141,12 +3171,7 @@
       }
 
       async function loadDetailTemuan() {
-        const fromRaw = document.getElementById("filterFrom").value;
-        const toRaw = document.getElementById("filterTo").value;
-        // Convert date-only values to full datetime strings to avoid timezone issues.
-        // "from" becomes start of day (00:00:00), "to" becomes end of day (23:59:59).
-        const from = fromRaw ? `${fromRaw}T00:00:00` : fromRaw;
-        const to   = toRaw   ? `${toRaw}T23:59:59`   : toRaw;
+        const { fromRaw, toRaw, from, to } = getFilterDateParams();
         const useLatest = state.detailViewMode === "latest";
         let rows;
         try {
@@ -3157,10 +3182,9 @@
         if (!rows) {
           const all = DEMO_TEMUAN.filter((t) => {
             const d = new Date(t.Timestamp);
-            if (from && d < new Date(from)) return false;
-            if (to) {
-              const tEnd = new Date(to);
-              tEnd.setHours(23, 59, 59);
+            if (fromRaw && d < new Date(fromRaw + "T00:00:00")) return false;
+            if (toRaw) {
+              const tEnd = new Date(toRaw + "T23:59:59");
               if (d > tEnd) return false;
             }
             return true;
@@ -3168,7 +3192,7 @@
           if (useLatest) {
             const latest = {};
             all.forEach(r => {
-              const key = (r.Line || '') + '|' + (r.Rak || '') + '|' + (r.Shelf || '');
+              const key = (r.Zona || '') + '|' + (r.Line || '') + '|' + (r.Rak || '') + '|' + (r.Shelf || '');
               if (!latest[key] || new Date(r.Timestamp) > new Date(latest[key].Timestamp)) {
                 latest[key] = r;
               }
@@ -3179,6 +3203,8 @@
           }
         }
         state._lastTemuanRows = rows;
+        state._lastTemuanFilterFrom = fromRaw;
+        state._lastTemuanFilterTo = toRaw;
 
         const list = document.getElementById("detailList");
         const empty = document.getElementById("detailEmpty");
