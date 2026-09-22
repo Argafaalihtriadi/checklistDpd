@@ -370,7 +370,35 @@ function getDashboard() {
   const compliance = checkedCount
     ? Math.round((okCount / checkedCount) * 100)
     : 0;
-  const pendingCount = Math.max(totalShelfMaster - checkedCount, 0);
+
+  // ── Pending Review: hitung sisa shelf yang BELUM diperiksa hari ini (WIB) ──
+  // "Hari ini" mengacu ke tanggal lokal WIB (UTC+7), bukan UTC server.
+  const nowWIB = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+  const startOfDayWIB = new Date(
+    Date.UTC(nowWIB.getUTCFullYear(), nowWIB.getUTCMonth(), nowWIB.getUTCDate(), 0, 0, 0) - 7 * 60 * 60 * 1000
+  );
+
+  const checklist = sheetToObjects(SHEET_NAMES.CHECKLIST);
+  const checkedTodayKeys = new Set();
+  const activeZonesTodaySet = new Set();
+
+  checklist.forEach((c) => {
+    if (new Date(c.Timestamp) >= startOfDayWIB) {
+      // Key unik per shelf yang sudah diperiksa hari ini
+      const key = `${c.Zona}|${c.Line}|${c.Rak}|${c.Shelf}`;
+      checkedTodayKeys.add(key);
+      activeZonesTodaySet.add(c.Zona);
+    }
+  });
+
+  // Hitung shelf di MasterZona yang belum ada di checkedTodayKeys
+  let pendingCount = 0;
+  zonaMaster.forEach((z) => {
+    const key = `${z.Zona}|${z.Line}|${z.Rak}|${z.Shelf}`;
+    if (!checkedTodayKeys.has(key)) pendingCount++;
+  });
+
+  const activeZonesToday = [...activeZonesTodaySet].sort((a, b) => a - b);
 
   const zoneTable = Object.values(zonaStats).map((z) => ({
     zona: z.zona,
@@ -383,19 +411,6 @@ function getDashboard() {
 
   const bestZone = zoneTable.length ? zoneTable[0] : null;
   const worstZone = zoneTable.length ? zoneTable[zoneTable.length - 1] : null;
-
-  // For Quick Filter Zona (today's active zones)
-  const checklist = sheetToObjects(SHEET_NAMES.CHECKLIST);
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-
-  const activeZonesTodaySet = new Set();
-  checklist.forEach((c) => {
-    if (new Date(c.Timestamp) >= startOfDay) {
-      activeZonesTodaySet.add(c.Zona);
-    }
-  });
-  const activeZonesToday = [...activeZonesTodaySet].sort((a, b) => a - b);
 
   return {
     compliance,

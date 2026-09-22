@@ -1411,7 +1411,7 @@
    Isi dua nilai ini sesuai SETUP.md
 ================================================================= */
       const APPS_SCRIPT_URL =
-        "https://script.google.com/macros/s/AKfycbyQdGTxdPZVJcY4r6cxJUBrL5-oAKxn0cr77z0Eo6LVRzLclh5uXStvjFkmE8IAyH3C/exec";
+        "https://script.google.com/macros/s/AKfycbwvNmj8LPAgT29o7SypLF6MvK6oHZ_xCrvxjIBnqbkI0-6SJL4TDBN4UtVAS84S9WNQ/exec";
       const GOOGLE_CLIENT_ID =
         "15966134219-dg7pm2p2lvdficra7ithu0v782tnp3d3.apps.googleusercontent.com"; // kosongkan kalau belum setup Google OAuth
 
@@ -2571,6 +2571,9 @@
         let rows = lastDashboard.zoneTable || [];
         if (filterZona)
           rows = rows.filter((r) => String(r.zona) === filterZona);
+
+        // Urutkan ascending berdasarkan nomor zona (terkecil di atas)
+        rows = [...rows].sort((a, b) => Number(a.zona) - Number(b.zona));
 
         const tbody = document.getElementById("zoneTableBody");
         const empty = document.getElementById("zoneTableEmpty");
